@@ -9,8 +9,28 @@ export function isSupportedLocale(value: string | null | undefined): value is Lo
   return value !== null && value !== undefined && SUPPORTED_LOCALES.includes(value as Locale);
 }
 
+export function resolveInitialLocale(
+  savedLocale: string | null | undefined,
+  navigatorLanguage: string | null | undefined,
+): Locale {
+  if (isSupportedLocale(savedLocale)) {
+    return savedLocale;
+  }
+
+  const normalized = String(navigatorLanguage ?? "").toLowerCase();
+  if (normalized.startsWith("zh-tw") || normalized.startsWith("zh-hk") || normalized.startsWith("zh-mo")) {
+    return "zh-TW";
+  }
+  if (normalized.startsWith("zh")) {
+    return "zh-CN";
+  }
+
+  // Product default for first-run UI language.
+  return "zh-CN";
+}
+
 class I18nManager {
-  private locale: Locale = "en";
+  private locale: Locale = "zh-CN";
   private translations: Record<Locale, TranslationMap> = { en } as Record<Locale, TranslationMap>;
   private subscribers: Set<Subscriber> = new Set();
 
@@ -20,18 +40,15 @@ class I18nManager {
 
   private loadLocale() {
     const saved = localStorage.getItem("openclaw.i18n.locale");
-    if (isSupportedLocale(saved)) {
-      this.locale = saved;
-    } else {
-      const navLang = navigator.language;
-      if (navLang.startsWith("zh")) {
-        this.locale = navLang === "zh-TW" || navLang === "zh-HK" ? "zh-TW" : "zh-CN";
-      } else if (navLang.startsWith("pt")) {
-        this.locale = "pt-BR";
-      } else {
-        this.locale = "en";
-      }
+    this.locale = resolveInitialLocale(saved, navigator.language);
+    this.applyDocumentLocale(this.locale);
+  }
+
+  private applyDocumentLocale(locale: Locale) {
+    if (typeof document === "undefined") {
+      return;
     }
+    document.documentElement.lang = locale;
   }
 
   public getLocale(): Locale {
@@ -40,6 +57,7 @@ class I18nManager {
 
   public async setLocale(locale: Locale) {
     if (this.locale === locale) {
+      this.applyDocumentLocale(locale);
       return;
     }
 
@@ -65,6 +83,7 @@ class I18nManager {
 
     this.locale = locale;
     localStorage.setItem("openclaw.i18n.locale", locale);
+    this.applyDocumentLocale(locale);
     this.notify();
   }
 

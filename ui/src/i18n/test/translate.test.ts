@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { i18n, t } from "../lib/translate.ts";
+import { i18n, resolveInitialLocale, t } from "../lib/translate.ts";
 
 describe("i18n", () => {
   beforeEach(() => {
@@ -27,5 +27,18 @@ describe("i18n", () => {
     // Since we don't mock the import, it might fail to load zh-CN,
     // but let's assume it falls back to English for now.
     expect(t("common.health")).toBeDefined();
+  });
+
+  it("should default to zh-CN for first-run non-Chinese browsers", () => {
+    expect(resolveInitialLocale(null, "en-US")).toBe("zh-CN");
+  });
+
+  it("should map zh-TW and zh-HK to zh-TW", () => {
+    expect(resolveInitialLocale(null, "zh-TW")).toBe("zh-TW");
+    expect(resolveInitialLocale(null, "zh-HK")).toBe("zh-TW");
+  });
+
+  it("should prefer saved locale over navigator locale", () => {
+    expect(resolveInitialLocale("en", "zh-CN")).toBe("en");
   });
 });
