@@ -69,6 +69,72 @@ Choose one track to avoid mixing setup styles:
 - **Track C: remote host or cloud**  
   Use one of [Ansible](/install/ansible), [Fly](/install/fly), [Render](/install/render), [Railway](/install/railway), or [Northflank](/install/northflank).
 
+## Linux server from zero non docker
+
+Use this when you want a long-running Linux gateway service (Debian/Ubuntu style).
+
+<Warning>
+Pick one deployment mode per host. If you use [Docker](/install/docker) or [Podman](/install/podman), do not also install a host gateway service on the same port.
+</Warning>
+
+<Note>
+If you install from npm, you do not need to clone the git repo first.
+</Note>
+
+<Steps>
+  <Step title="Install system Node 22 and OpenClaw">
+    ```bash
+    apt-get update
+    apt-get install -y ca-certificates curl gnupg git tmux
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+    apt-get install -y nodejs
+
+    /usr/bin/npm i -g openclaw@latest --registry=https://registry.npmjs.org
+    OC_JS="$(/usr/bin/npm root -g)/openclaw/dist/index.js"
+    /usr/bin/node "$OC_JS" --version
+    ```
+  </Step>
+  <Step title="Install and restart the gateway service">
+    ```bash
+    /usr/bin/node "$OC_JS" config set gateway.mode local
+    /usr/bin/node "$OC_JS" gateway install --force --runtime node
+    /usr/bin/node "$OC_JS" gateway restart
+    ```
+  </Step>
+  <Step title="Verify gateway health">
+    ```bash
+    /usr/bin/node "$OC_JS" gateway status --deep
+    /usr/bin/node "$OC_JS" health
+    /usr/bin/node "$OC_JS" channels status --probe
+    ```
+
+    Success checks:
+    - `RPC probe: ok` appears in `gateway status --deep`
+    - `channels status --probe` reports `Gateway reachable`
+  </Step>
+  <Step title="Open the dashboard from your laptop">
+    ```bash
+    /usr/bin/node "$OC_JS" dashboard --no-open
+    ```
+
+    From your laptop:
+
+    ```bash
+    ssh -N -L 18789:127.0.0.1:18789 <user>@<host>
+    ```
+
+    Then open `http://localhost:18789/` (or the full token URL printed by `dashboard --no-open`).
+  </Step>
+  <Step title="If you see pairing required">
+    ```bash
+    /usr/bin/node "$OC_JS" devices list
+    /usr/bin/node "$OC_JS" devices approve --latest
+    ```
+
+    Related docs: [Control UI](/web/control-ui), [Devices CLI](/cli/devices).
+  </Step>
+</Steps>
+
 ## Install methods
 
 <Tip>

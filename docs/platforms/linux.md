@@ -15,11 +15,18 @@ Native Linux companion apps are planned. Contributions are welcome if you want t
 
 ## Beginner quick path (VPS)
 
-1. Install Node 22+
-2. `npm i -g openclaw@latest`
-3. `openclaw onboard --install-daemon`
+1. Install OpenClaw with system Node 22 (see [Install](/install#linux-server-from-zero-non-docker))
+2. Install/reinstall the service: `openclaw gateway install --force --runtime node`
+3. Verify: `openclaw gateway status --deep` (look for `RPC probe: ok`)
 4. From your laptop: `ssh -N -L 18789:127.0.0.1:18789 <user>@<host>`
-5. Open `http://127.0.0.1:18789/` and paste your token
+5. Run `openclaw dashboard --no-open` and open the printed URL from your laptop
+
+If the UI reports `pairing required`, approve the browser device:
+
+```bash
+openclaw devices list
+openclaw devices approve --latest
+```
 
 Step-by-step VPS guide: [exe.dev](/install/exe-dev)
 
@@ -28,6 +35,10 @@ Step-by-step VPS guide: [exe.dev](/install/exe-dev)
 - [Getting Started](/start/getting-started)
 - [Install & updates](/install/updating)
 - Optional flows: [Bun (experimental)](/install/bun), [Nix](/install/nix), [Docker](/install/docker)
+
+<Warning>
+Do not mix host service and Docker service on the same host/port. If you choose Docker, stay on the Docker flow and do not run `openclaw gateway install` on the host.
+</Warning>
 
 ## Gateway
 

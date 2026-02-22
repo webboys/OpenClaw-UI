@@ -18,17 +18,17 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
 </p>
 
-**OpenClaw** is a _personal AI assistant_ you run on your own devices.
-It answers you on the channels you already use (WhatsApp, Telegram, Slack, Discord, Google Chat, Signal, iMessage, Microsoft Teams, WebChat), plus extension channels like BlueBubbles, Matrix, Zalo, and Zalo Personal. It can speak and listen on macOS/iOS/Android, and can render a live Canvas you control. The Gateway is just the control plane — the product is the assistant.
+**OpenClaw** 是一个运行在你自己设备上的个人 AI 助手。  
+它可以在你已经使用的渠道中回复你（WhatsApp、Telegram、Slack、Discord、Google Chat、Signal、iMessage、Microsoft Teams、WebChat），也支持扩展渠道（BlueBubbles、Matrix、Zalo、Zalo Personal）。它还能在 macOS/iOS/Android 上语音收发，并提供可交互的实时 Canvas。Gateway 只是控制平面，真正的产品是助手本身。
 
-If you want a personal, single-user assistant that feels local, fast, and always-on, this is it.
+如果你想要一个单用户、本地感强、响应快、可长期在线的助手，OpenClaw 就是这个定位。
 
 [Website](https://openclaw.ai) · [Docs](https://docs.openclaw.ai) · [Vision](VISION.md) · [DeepWiki](https://deepwiki.com/openclaw/openclaw) · [Getting Started](https://docs.openclaw.ai/start/getting-started) · [Updating](https://docs.openclaw.ai/install/updating) · [Showcase](https://docs.openclaw.ai/start/showcase) · [FAQ](https://docs.openclaw.ai/start/faq) · [Wizard](https://docs.openclaw.ai/start/wizard) · [Nix](https://github.com/openclaw/nix-openclaw) · [Docker](https://docs.openclaw.ai/install/docker) · [Discord](https://discord.gg/clawd)
 
-Preferred setup: run the onboarding wizard (`openclaw onboard`) in your terminal.
-The wizard guides you step by step through setting up the gateway, workspace, channels, and skills. The CLI wizard is the recommended path and works on **macOS, Linux, and Windows (via WSL2; strongly recommended)**.
-Works with npm, pnpm, or bun.
-New install? Start here: [Getting started](https://docs.openclaw.ai/start/getting-started)
+推荐安装方式：在终端运行引导向导 `openclaw onboard`。  
+向导会按步骤完成 gateway、workspace、渠道与技能配置。CLI 向导是推荐路径，支持 **macOS、Linux、Windows（推荐 WSL2）**。  
+支持 npm、pnpm、bun。  
+首次安装请从这里开始：[Getting started](https://docs.openclaw.ai/start/getting-started)
 
 **Subscriptions (OAuth):**
 
