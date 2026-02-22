@@ -8,12 +8,13 @@ type SettingsHost = Parameters<typeof setTabFromRoute>[0] & {
 };
 
 const createHost = (tab: Tab): SettingsHost => ({
-  settings: {
-    gatewayUrl: "",
-    token: "",
-    sessionKey: "main",
-    lastActiveSessionKey: "main",
-    theme: "system",
+    settings: {
+      gatewayUrl: "",
+      token: "",
+      persistToken: true,
+      sessionKey: "main",
+      lastActiveSessionKey: "main",
+      theme: "system",
     chatFocusMode: false,
     chatShowThinking: true,
     splitRatio: 0.6,

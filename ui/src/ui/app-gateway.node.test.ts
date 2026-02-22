@@ -48,6 +48,7 @@ function createHost() {
     settings: {
       gatewayUrl: "ws://127.0.0.1:18789",
       token: "",
+      persistToken: true,
       sessionKey: "main",
       lastActiveSessionKey: "main",
       theme: "system",

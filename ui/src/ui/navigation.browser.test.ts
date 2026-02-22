@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import "../styles.css";
 import { mountApp as mountTestApp, registerAppMountHooks } from "./test-helpers/app-mount.ts";
 
@@ -320,5 +320,64 @@ describe("control UI routing", () => {
     expect(app.settings.token).toBe("abc123");
     expect(window.location.pathname).toBe("/ui/overview");
     expect(window.location.hash).toBe("");
+  });
+
+  it("keeps token in-memory while disabling token persistence", async () => {
+    const app = mountApp("/ui/overview");
+    await app.updateComplete;
+
+    const tokenInput = app.querySelector<HTMLInputElement>('input[placeholder="OPENCLAW_GATEWAY_TOKEN"]');
+    expect(tokenInput).not.toBeNull();
+    if (!tokenInput) {
+      return;
+    }
+    tokenInput.value = "abc123";
+    tokenInput.dispatchEvent(new Event("input", { bubbles: true }));
+    await app.updateComplete;
+
+    const persistToggle = app.querySelector<HTMLInputElement>('input[data-testid="persist-token-toggle"]');
+    expect(persistToggle).not.toBeNull();
+    if (!persistToggle) {
+      return;
+    }
+    persistToggle.checked = false;
+    persistToggle.dispatchEvent(new Event("change", { bubbles: true }));
+    await app.updateComplete;
+
+    expect(app.settings.token).toBe("abc123");
+    expect(app.settings.persistToken).toBe(false);
+
+    const raw = localStorage.getItem("openclaw.control.settings.v1");
+    expect(raw).not.toBeNull();
+    const stored = JSON.parse(String(raw)) as { token?: string; persistToken?: boolean };
+    expect(stored.persistToken).toBe(false);
+    expect(stored.token).toBe("");
+  });
+
+  it("copies troubleshooting commands from the overview connection fix card", async () => {
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+
+    const app = mountApp("/ui/overview");
+    await app.updateComplete;
+
+    app.lastError = "connect failed";
+    await app.updateComplete;
+
+    const copyButton = Array.from(app.querySelectorAll("button")).find(
+      (button) => button.textContent?.trim() === "Copy commands",
+    );
+    expect(copyButton).not.toBeNull();
+    copyButton?.dispatchEvent(
+      new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }),
+    );
+
+    await Promise.resolve();
+    expect(writeText).toHaveBeenCalledWith(
+      "openclaw dashboard --no-open\nopenclaw config get gateway.auth.token",
+    );
   });
 });

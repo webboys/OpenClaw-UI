@@ -6,6 +6,7 @@ import type { ThemeMode } from "./theme.ts";
 export type UiSettings = {
   gatewayUrl: string;
   token: string;
+  persistToken: boolean;
   sessionKey: string;
   lastActiveSessionKey: string;
   theme: ThemeMode;
@@ -27,6 +28,7 @@ export function loadSettings(): UiSettings {
   const defaults: UiSettings = {
     gatewayUrl: defaultUrl,
     token: "",
+    persistToken: true,
     sessionKey: "main",
     lastActiveSessionKey: "main",
     theme: "system",
@@ -44,12 +46,15 @@ export function loadSettings(): UiSettings {
       return defaults;
     }
     const parsed = JSON.parse(raw) as Partial<UiSettings>;
+    const persistToken =
+      typeof parsed.persistToken === "boolean" ? parsed.persistToken : defaults.persistToken;
     return {
       gatewayUrl:
         typeof parsed.gatewayUrl === "string" && parsed.gatewayUrl.trim()
           ? parsed.gatewayUrl.trim()
           : defaults.gatewayUrl,
-      token: typeof parsed.token === "string" ? parsed.token : defaults.token,
+      token: persistToken && typeof parsed.token === "string" ? parsed.token : defaults.token,
+      persistToken,
       sessionKey:
         typeof parsed.sessionKey === "string" && parsed.sessionKey.trim()
           ? parsed.sessionKey.trim()
@@ -93,5 +98,10 @@ export function loadSettings(): UiSettings {
 }
 
 export function saveSettings(next: UiSettings) {
-  localStorage.setItem(KEY, JSON.stringify(next));
+  const stored: UiSettings = {
+    ...next,
+    // Keep token in-memory for the current tab, but don't persist it when disabled.
+    token: next.persistToken ? next.token : "",
+  };
+  localStorage.setItem(KEY, JSON.stringify(stored));
 }

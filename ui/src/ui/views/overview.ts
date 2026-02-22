@@ -40,6 +40,39 @@ type ConnectionFix = {
   needsPairingApproval?: boolean;
 };
 
+async function copyCommandsToClipboard(commands: string[]): Promise<boolean> {
+  const text = commands.join("\n").trim();
+  if (!text) {
+    return false;
+  }
+
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Fall back to document.execCommand below when clipboard API is blocked.
+    }
+  }
+
+  if (typeof document === "undefined") {
+    return false;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.append(textarea);
+  textarea.select();
+  const copied = (
+    document as Document & { execCommand?: (command: string) => boolean }
+  ).execCommand?.("copy");
+  textarea.remove();
+  return Boolean(copied);
+}
+
 function resolveConnectionFix(lastError: string | null): ConnectionFix | null {
   if (!lastError) {
     return null;
@@ -68,7 +101,10 @@ function resolveConnectionFix(lastError: string | null): ConnectionFix | null {
       message: "Open the dashboard on localhost or HTTPS (for example Tailscale Serve).",
       commands: ["openclaw dashboard --no-open"],
       docs: [
-        { label: "Control UI insecure HTTP", href: "https://docs.openclaw.ai/web/control-ui#insecure-http" },
+        {
+          label: "Control UI insecure HTTP",
+          href: "https://docs.openclaw.ai/web/control-ui#insecure-http",
+        },
       ],
     };
   }
@@ -76,7 +112,9 @@ function resolveConnectionFix(lastError: string | null): ConnectionFix | null {
     return {
       title: "Origin blocked",
       message: "Open the UI from the gateway host, or add your dev origin allowlist.",
-      commands: ['openclaw config set gateway.controlUi.allowedOrigins "[\\"http://localhost:5173\\"]"'],
+      commands: [
+        'openclaw config set gateway.controlUi.allowedOrigins "[\\"http://localhost:5173\\"]"',
+      ],
       docs: [{ label: "Control UI", href: "https://docs.openclaw.ai/web/control-ui" }],
     };
   }
@@ -84,7 +122,12 @@ function resolveConnectionFix(lastError: string | null): ConnectionFix | null {
     title: "Connection troubleshooting",
     message: "Verify gateway health and reconnect.",
     commands: ["openclaw status"],
-    docs: [{ label: "Gateway troubleshooting", href: "https://docs.openclaw.ai/gateway/troubleshooting" }],
+    docs: [
+      {
+        label: "Gateway troubleshooting",
+        href: "https://docs.openclaw.ai/gateway/troubleshooting",
+      },
+    ],
   };
 }
 
@@ -142,7 +185,12 @@ function renderConnectionFixCard(fix: ConnectionFix | null) {
     <div class="callout" style="margin-top: 12px;">
       <div><strong>${fix.title}</strong></div>
       <div class="muted" style="margin-top: 4px;">${fix.message}</div>
-      <div style="margin-top: 8px;">Run:</div>
+      <div class="row" style="margin-top: 8px; justify-content: space-between; align-items: center; gap: 8px;">
+        <span>Run:</span>
+        <button class="btn btn--sm" @click=${() => void copyCommandsToClipboard(fix.commands)}>
+          Copy commands
+        </button>
+      </div>
       <pre class="code-block" style="margin-top: 6px;">${fix.commands.join("\n")}</pre>
       ${
         fix.docs?.length
@@ -150,7 +198,13 @@ function renderConnectionFixCard(fix: ConnectionFix | null) {
               <div style="margin-top: 8px;">
                 ${fix.docs.map(
                   (entry, index) => html`
-                    ${index > 0 ? html`<span class="muted"> · </span>` : null}
+                    ${
+                      index > 0
+                        ? html`
+                            <span class="muted"> · </span>
+                          `
+                        : null
+                    }
                     <a class="session-link" href=${entry.href} target="_blank" rel="noreferrer">${entry.label}</a>
                   `,
                 )}
@@ -302,6 +356,21 @@ export function renderOverview(props: OverviewProps) {
                     placeholder="OPENCLAW_GATEWAY_TOKEN"
                   />
                 </label>
+                <label class="row" style="align-items: center; gap: 8px; margin-top: 4px;">
+                  <input
+                    data-testid="persist-token-toggle"
+                    type="checkbox"
+                    .checked=${props.settings.persistToken}
+                    @change=${(e: Event) => {
+                      const checked = (e.target as HTMLInputElement).checked;
+                      props.onSettingsChange({
+                        ...props.settings,
+                        persistToken: checked,
+                      });
+                    }}
+                  />
+                  <span>Remember token on this browser</span>
+                </label>
                 <label class="field">
                   <span>${t("overview.access.password")}</span>
                   <input
@@ -391,9 +460,11 @@ export function renderOverview(props: OverviewProps) {
               `
         }
         ${renderConnectionFixCard(connectionFix)}
-        ${connectionFix?.needsPairingApproval || props.pendingDevices.length > 0
-          ? renderPendingApprovals(props)
-          : null}
+        ${
+          connectionFix?.needsPairingApproval || props.pendingDevices.length > 0
+            ? renderPendingApprovals(props)
+            : null
+        }
       </div>
     </section>
 
