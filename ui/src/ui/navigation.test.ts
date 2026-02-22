@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { t } from "../i18n/index.ts";
 import {
   TAB_GROUPS,
   iconForTab,
@@ -59,11 +60,11 @@ describe("titleForTab", () => {
   });
 
   it("returns expected titles", () => {
-    expect(titleForTab("chat")).toBe("Chat");
-    expect(titleForTab("overview")).toBe("Overview");
-    expect(titleForTab("runtime")).toBe("Runtime");
-    expect(titleForTab("cron")).toBe("Cron Jobs");
-    expect(titleForTab("skills")).toBe("Skills Registry");
+    expect(titleForTab("chat")).toBe(t("tabs.chat"));
+    expect(titleForTab("overview")).toBe(t("tabs.overview"));
+    expect(titleForTab("runtime")).toBe(t("tabs.runtime"));
+    expect(titleForTab("cron")).toBe(t("tabs.cron"));
+    expect(titleForTab("skills")).toBe(t("tabs.skills"));
   });
 });
 
@@ -76,9 +77,10 @@ describe("subtitleForTab", () => {
   });
 
   it("returns descriptive subtitles", () => {
-    expect(subtitleForTab("chat")).toContain("chat session");
+    expect(subtitleForTab("chat")).toBe(t("subtitles.chat"));
+    expect(subtitleForTab("config")).toBe(t("subtitles.config"));
+    expect(subtitleForTab("skills")).toBe(t("subtitles.skills"));
     expect(subtitleForTab("config")).toContain("openclaw.json");
-    expect(subtitleForTab("skills")).toContain("registry");
   });
 });
 

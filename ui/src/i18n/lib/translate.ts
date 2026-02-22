@@ -36,6 +36,12 @@ class I18nManager {
 
   constructor() {
     this.loadLocale();
+    void this.ensureLocaleLoaded(this.locale).then((loaded) => {
+      if (!loaded) {
+        return;
+      }
+      this.notify();
+    });
   }
 
   private loadLocale() {
@@ -55,35 +61,51 @@ class I18nManager {
     return this.locale;
   }
 
+  private async ensureLocaleLoaded(locale: Locale): Promise<boolean> {
+    if (this.translations[locale]) {
+      return true;
+    }
+
+    try {
+      let module: Record<string, TranslationMap>;
+      if (locale === "zh-CN") {
+        module = await import("../locales/zh-CN.ts");
+      } else if (locale === "zh-TW") {
+        module = await import("../locales/zh-TW.ts");
+      } else if (locale === "pt-BR") {
+        module = await import("../locales/pt-BR.ts");
+      } else {
+        return false;
+      }
+      const map = module[locale.replace("-", "_")];
+      if (!map) {
+        return false;
+      }
+      this.translations[locale] = map;
+      return true;
+    } catch (e) {
+      console.error(`Failed to load locale: ${locale}`, e);
+      return false;
+    }
+  }
+
   public async setLocale(locale: Locale) {
-    if (this.locale === locale) {
-      this.applyDocumentLocale(locale);
+    const localeChanged = this.locale !== locale;
+    const hadLocaleMap = Boolean(this.translations[locale]);
+    if (!(await this.ensureLocaleLoaded(locale))) {
       return;
     }
 
-    // Lazy load translations if needed
-    if (!this.translations[locale]) {
-      try {
-        let module: Record<string, TranslationMap>;
-        if (locale === "zh-CN") {
-          module = await import("../locales/zh-CN.ts");
-        } else if (locale === "zh-TW") {
-          module = await import("../locales/zh-TW.ts");
-        } else if (locale === "pt-BR") {
-          module = await import("../locales/pt-BR.ts");
-        } else {
-          return;
-        }
-        this.translations[locale] = module[locale.replace("-", "_")];
-      } catch (e) {
-        console.error(`Failed to load locale: ${locale}`, e);
-        return;
+    this.applyDocumentLocale(locale);
+    if (!localeChanged) {
+      if (!hadLocaleMap) {
+        this.notify();
       }
+      return;
     }
 
     this.locale = locale;
     localStorage.setItem("openclaw.i18n.locale", locale);
-    this.applyDocumentLocale(locale);
     this.notify();
   }
 

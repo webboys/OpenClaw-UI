@@ -37,9 +37,7 @@ describe("control UI routing", () => {
     const app = mountApp("/runtime?panel=instances");
     await app.updateComplete;
 
-    const sessionButton = Array.from(app.querySelectorAll("button")).find(
-      (button) => button.textContent?.trim() === "Sessions",
-    );
+    const sessionButton = app.querySelector<HTMLButtonElement>('button[data-testid="runtime-panel-sessions"]');
     expect(sessionButton).not.toBeNull();
     sessionButton?.dispatchEvent(
       new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }),
@@ -79,9 +77,7 @@ describe("control UI routing", () => {
     const app = mountApp("/runtime?panel=instances");
     await app.updateComplete;
 
-    const openChannelsButton = Array.from(app.querySelectorAll("button")).find(
-      (button) => button.textContent?.trim() === "Open Channels",
-    );
+    const openChannelsButton = app.querySelector<HTMLButtonElement>('button[data-testid="runtime-open-channels"]');
     expect(openChannelsButton).not.toBeNull();
     openChannelsButton?.dispatchEvent(
       new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }),
@@ -105,9 +101,7 @@ describe("control UI routing", () => {
     };
     await app.updateComplete;
 
-    const openChatButton = Array.from(app.querySelectorAll("button")).find(
-      (button) => button.textContent?.trim() === "Open Chat",
-    );
+    const openChatButton = app.querySelector<HTMLButtonElement>('button[data-testid="runtime-open-chat"]');
     expect(openChatButton).not.toBeNull();
     openChatButton?.dispatchEvent(
       new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }),
@@ -188,9 +182,7 @@ describe("control UI routing", () => {
 
     expect(app.querySelector('a.nav-item[href="/debug"]')).toBeNull();
 
-    const showAllButton = Array.from(app.querySelectorAll("button")).find(
-      (button) => button.textContent?.trim() === "Show all tabs",
-    );
+    const showAllButton = app.querySelector<HTMLButtonElement>('button[data-testid="nav-beginner-toggle"]');
     expect(showAllButton).not.toBeNull();
     showAllButton?.dispatchEvent(
       new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }),
@@ -367,9 +359,7 @@ describe("control UI routing", () => {
     app.lastError = "connect failed";
     await app.updateComplete;
 
-    const copyButton = Array.from(app.querySelectorAll("button")).find(
-      (button) => button.textContent?.trim() === "Copy commands",
-    );
+    const copyButton = app.querySelector<HTMLButtonElement>('button[data-testid="overview-copy-commands"]');
     expect(copyButton).not.toBeNull();
     copyButton?.dispatchEvent(
       new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }),

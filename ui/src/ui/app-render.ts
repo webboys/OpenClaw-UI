@@ -171,7 +171,7 @@ export function renderApp(state: AppViewState) {
             </div>
             <div class="brand-text">
               <div class="brand-title">OPENCLAW</div>
-              <div class="brand-sub">Gateway Dashboard</div>
+              <div class="brand-sub">${t("app.brand.dashboard")}</div>
             </div>
           </div>
         </div>
@@ -219,6 +219,7 @@ export function renderApp(state: AppViewState) {
           </div>
           <div class="nav-group__items">
             <button
+              data-testid="nav-beginner-toggle"
               class="nav-item nav-item--external"
               type="button"
               @click=${() =>
@@ -226,19 +227,21 @@ export function renderApp(state: AppViewState) {
                   ...state.settings,
                   navBeginnerMode: !beginnerMode,
                 })}
-              title=${beginnerMode ? "Show all tabs" : "Enable beginner mode"}
+              title=${beginnerMode ? t("app.nav.showAllTabs") : t("app.nav.enableBeginnerMode")}
             >
               <span class="nav-item__icon" aria-hidden="true">
                 ${icons.settings}
               </span>
-              <span class="nav-item__text">${beginnerMode ? "Show all tabs" : "Beginner mode"}</span>
+              <span class="nav-item__text">
+                ${beginnerMode ? t("app.nav.showAllTabs") : t("app.nav.beginnerMode")}
+              </span>
             </button>
             <a
               class="nav-item nav-item--external"
               href="https://docs.openclaw.ai"
               target="_blank"
               rel="noreferrer"
-              title="${t("common.docs")} (opens in new tab)"
+              title="${t("common.docs")} (${t("common.opensInNewTab")})"
             >
               <span class="nav-item__icon" aria-hidden="true">${icons.book}</span>
               <span class="nav-item__text">${t("common.docs")}</span>
@@ -250,13 +253,13 @@ export function renderApp(state: AppViewState) {
         ${
           state.updateAvailable
             ? html`<div class="update-banner callout danger" role="alert">
-              <strong>Update available:</strong> v${state.updateAvailable.latestVersion}
-              (running v${state.updateAvailable.currentVersion}).
+              <strong>${t("app.update.availableLabel")}:</strong> v${state.updateAvailable.latestVersion}
+              (${t("app.update.runningVersion", { version: state.updateAvailable.currentVersion })}).
               <button
                 class="btn btn--sm update-banner__btn"
                 ?disabled=${state.updateRunning || !state.connected}
                 @click=${() => runUpdate(state)}
-              >${state.updateRunning ? "Updating…" : "Update now"}</button>
+              >${state.updateRunning ? t("app.update.updating") : t("app.update.updateNow")}</button>
             </div>`
             : nothing
         }

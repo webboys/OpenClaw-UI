@@ -80,29 +80,29 @@ function resolveConnectionFix(lastError: string | null): ConnectionFix | null {
   const lower = lastError.toLowerCase();
   if (lower.includes("pairing required")) {
     return {
-      title: "Pairing approval required",
-      message: "Approve this browser/device before reconnecting.",
+      title: t("overview.fix.pairingTitle"),
+      message: t("overview.fix.pairingMessage"),
       commands: ["openclaw devices list", "openclaw devices approve <requestId>"],
-      docs: [{ label: "Devices CLI", href: "https://docs.openclaw.ai/cli/devices" }],
+      docs: [{ label: t("overview.fix.devicesDocs"), href: "https://docs.openclaw.ai/cli/devices" }],
       needsPairingApproval: true,
     };
   }
   if (lower.includes("unauthorized") || lower.includes("connect failed")) {
     return {
-      title: "Gateway auth failed",
-      message: "Use a fresh dashboard link or paste the current gateway token.",
+      title: t("overview.fix.authTitle"),
+      message: t("overview.fix.authMessage"),
       commands: ["openclaw dashboard --no-open", "openclaw config get gateway.auth.token"],
-      docs: [{ label: "Dashboard auth", href: "https://docs.openclaw.ai/web/dashboard" }],
+      docs: [{ label: t("overview.fix.dashboardDocs"), href: "https://docs.openclaw.ai/web/dashboard" }],
     };
   }
   if (lower.includes("secure context") || lower.includes("device identity required")) {
     return {
-      title: "Secure context required",
-      message: "Open the dashboard on localhost or HTTPS (for example Tailscale Serve).",
+      title: t("overview.fix.secureTitle"),
+      message: t("overview.fix.secureMessage"),
       commands: ["openclaw dashboard --no-open"],
       docs: [
         {
-          label: "Control UI insecure HTTP",
+          label: t("overview.fix.insecureHttpDocs"),
           href: "https://docs.openclaw.ai/web/control-ui#insecure-http",
         },
       ],
@@ -110,21 +110,21 @@ function resolveConnectionFix(lastError: string | null): ConnectionFix | null {
   }
   if (lower.includes("origin not allowed")) {
     return {
-      title: "Origin blocked",
-      message: "Open the UI from the gateway host, or add your dev origin allowlist.",
+      title: t("overview.fix.originTitle"),
+      message: t("overview.fix.originMessage"),
       commands: [
         'openclaw config set gateway.controlUi.allowedOrigins "[\\"http://localhost:5173\\"]"',
       ],
-      docs: [{ label: "Control UI", href: "https://docs.openclaw.ai/web/control-ui" }],
+      docs: [{ label: t("overview.fix.controlUiDocs"), href: "https://docs.openclaw.ai/web/control-ui" }],
     };
   }
   return {
-    title: "Connection troubleshooting",
-    message: "Verify gateway health and reconnect.",
+    title: t("overview.fix.genericTitle"),
+    message: t("overview.fix.genericMessage"),
     commands: ["openclaw status"],
     docs: [
       {
-        label: "Gateway troubleshooting",
+        label: t("overview.fix.troubleshootingDocs"),
         href: "https://docs.openclaw.ai/gateway/troubleshooting",
       },
     ],
@@ -140,9 +140,9 @@ function renderPendingApprovals(props: OverviewProps) {
   return html`
     <div class="callout" style="margin-top: 12px;">
       <div class="row" style="justify-content: space-between; align-items: center; gap: 8px;">
-        <strong>Pending device approvals (${pending.length})</strong>
+        <strong>${t("overview.devices.pendingTitle", { count: String(pending.length) })}</strong>
         <button class="btn btn--sm" ?disabled=${props.devicesLoading} @click=${props.onDevicesRefresh}>
-          ${props.devicesLoading ? "Loading…" : "Refresh"}
+          ${props.devicesLoading ? t("common.loading") : t("common.refresh")}
         </button>
       </div>
       ${
@@ -153,7 +153,10 @@ function renderPendingApprovals(props: OverviewProps) {
       <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
         ${rows.map((req) => {
           const name = req.displayName?.trim() || req.deviceId;
-          const meta = [req.role ? `role: ${req.role}` : "", req.remoteIp ? req.remoteIp : ""]
+          const meta = [
+            req.role ? `${t("overview.devices.roleLabel")}: ${req.role}` : "",
+            req.remoteIp ? req.remoteIp : "",
+          ]
             .filter(Boolean)
             .join(" · ");
           return html`
@@ -167,7 +170,7 @@ function renderPendingApprovals(props: OverviewProps) {
                 ?disabled=${props.devicesLoading}
                 @click=${() => props.onDeviceApprove(req.requestId)}
               >
-                Approve
+                ${t("overview.devices.approve")}
               </button>
             </div>
           `;
@@ -186,9 +189,13 @@ function renderConnectionFixCard(fix: ConnectionFix | null) {
       <div><strong>${fix.title}</strong></div>
       <div class="muted" style="margin-top: 4px;">${fix.message}</div>
       <div class="row" style="margin-top: 8px; justify-content: space-between; align-items: center; gap: 8px;">
-        <span>Run:</span>
-        <button class="btn btn--sm" @click=${() => void copyCommandsToClipboard(fix.commands)}>
-          Copy commands
+        <span>${t("overview.fix.runLabel")}</span>
+        <button
+          data-testid="overview-copy-commands"
+          class="btn btn--sm"
+          @click=${() => void copyCommandsToClipboard(fix.commands)}
+        >
+          ${t("overview.fix.copyCommands")}
         </button>
       </div>
       <pre class="code-block" style="margin-top: 6px;">${fix.commands.join("\n")}</pre>
@@ -248,8 +255,8 @@ export function renderOverview(props: OverviewProps) {
         <div class="muted" style="margin-top: 8px">
           ${t("overview.auth.required")}
           <div style="margin-top: 6px">
-            <span class="mono">openclaw dashboard --no-open</span> → tokenized URL<br />
-            <span class="mono">openclaw doctor --generate-gateway-token</span> → set token
+            <span class="mono">openclaw dashboard --no-open</span> - ${t("overview.auth.tokenizedUrlHint")}<br />
+            <span class="mono">openclaw doctor --generate-gateway-token</span> - ${t("overview.auth.generateTokenHint")}
           </div>
           <div style="margin-top: 6px">
             <a
@@ -257,8 +264,7 @@ export function renderOverview(props: OverviewProps) {
               href="https://docs.openclaw.ai/web/dashboard"
               target="_blank"
               rel="noreferrer"
-              title="Control UI auth docs (opens in new tab)"
-              >Docs: Control UI auth</a
+              >${t("overview.auth.docsLabel")}</a
             >
           </div>
         </div>
@@ -273,8 +279,7 @@ export function renderOverview(props: OverviewProps) {
             href="https://docs.openclaw.ai/web/dashboard"
             target="_blank"
             rel="noreferrer"
-            title="Control UI auth docs (opens in new tab)"
-            >Docs: Control UI auth</a
+            >${t("overview.auth.docsLabel")}</a
           >
         </div>
       </div>
@@ -305,8 +310,7 @@ export function renderOverview(props: OverviewProps) {
             href="https://docs.openclaw.ai/gateway/tailscale"
             target="_blank"
             rel="noreferrer"
-            title="Tailscale Serve docs (opens in new tab)"
-            >Docs: Tailscale Serve</a
+            >${t("overview.insecure.tailscaleDocsLabel")}</a
           >
           <span class="muted"> · </span>
           <a
@@ -314,8 +318,7 @@ export function renderOverview(props: OverviewProps) {
             href="https://docs.openclaw.ai/web/control-ui#insecure-http"
             target="_blank"
             rel="noreferrer"
-            title="Insecure HTTP docs (opens in new tab)"
-            >Docs: Insecure HTTP</a
+            >${t("overview.insecure.httpDocsLabel")}</a
           >
         </div>
       </div>
@@ -369,7 +372,7 @@ export function renderOverview(props: OverviewProps) {
                       });
                     }}
                   />
-                  <span>Remember token on this browser</span>
+                  <span>${t("overview.access.rememberToken")}</span>
                 </label>
                 <label class="field">
                   <span>${t("overview.access.password")}</span>
@@ -380,7 +383,7 @@ export function renderOverview(props: OverviewProps) {
                       const v = (e.target as HTMLInputElement).value;
                       props.onPasswordChange(v);
                     }}
-                    placeholder="system or shared password"
+                    placeholder=${t("overview.access.passwordPlaceholder")}
                   />
                 </label>
               `

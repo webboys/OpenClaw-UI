@@ -30,12 +30,14 @@ export function renderRuntime(props: RuntimeProps) {
         </div>
         <div class="row" style="gap: 8px;">
           <button
+            data-testid="runtime-panel-instances"
             class="btn btn--sm ${props.panel === "instances" ? "active" : ""}"
             @click=${() => props.onPanelChange("instances")}
           >
             ${t("tabs.instances")}
           </button>
           <button
+            data-testid="runtime-panel-sessions"
             class="btn btn--sm ${props.panel === "sessions" ? "active" : ""}"
             @click=${() => props.onPanelChange("sessions")}
           >
@@ -48,8 +50,10 @@ export function renderRuntime(props: RuntimeProps) {
           ? html`
               <div class="callout" style="margin-top: 12px;">
                 <div class="row" style="justify-content: space-between; gap: 8px; align-items: center;">
-                  <span>No instances are reporting yet.</span>
-                  <button class="btn btn--sm" @click=${props.onOpenChannels}>Open Channels</button>
+                  <span>${t("runtime.empty.instances")}</span>
+                  <button data-testid="runtime-open-channels" class="btn btn--sm" @click=${props.onOpenChannels}>
+                    ${t("runtime.empty.openChannels")}
+                  </button>
                 </div>
               </div>
             `
@@ -60,8 +64,10 @@ export function renderRuntime(props: RuntimeProps) {
           ? html`
               <div class="callout" style="margin-top: 12px;">
                 <div class="row" style="justify-content: space-between; gap: 8px; align-items: center;">
-                  <span>No sessions found yet.</span>
-                  <button class="btn btn--sm" @click=${props.onOpenChat}>Open Chat</button>
+                  <span>${t("runtime.empty.sessions")}</span>
+                  <button data-testid="runtime-open-chat" class="btn btn--sm" @click=${props.onOpenChat}>
+                    ${t("runtime.empty.openChat")}
+                  </button>
                 </div>
               </div>
             `

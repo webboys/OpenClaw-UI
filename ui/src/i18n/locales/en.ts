@@ -7,11 +7,13 @@ export const en: TranslationMap = {
     offline: "Offline",
     connect: "Connect",
     refresh: "Refresh",
+    loading: "Loading...",
     enabled: "Enabled",
     disabled: "Disabled",
     na: "n/a",
     docs: "Docs",
     resources: "Resources",
+    opensInNewTab: "opens in new tab",
   },
   nav: {
     chat: "Chat",
@@ -54,6 +56,30 @@ export const en: TranslationMap = {
     debug: "Gateway snapshots, events, and manual RPC calls.",
     logs: "Live tail of the gateway file logs.",
   },
+  app: {
+    brand: {
+      dashboard: "Gateway Dashboard",
+    },
+    nav: {
+      showAllTabs: "Show all tabs",
+      enableBeginnerMode: "Enable beginner mode",
+      beginnerMode: "Beginner mode",
+    },
+    update: {
+      availableLabel: "Update available",
+      runningVersion: "running v{version}",
+      updateNow: "Update now",
+      updating: "Updating...",
+    },
+  },
+  runtime: {
+    empty: {
+      instances: "No instances are reporting yet.",
+      openChannels: "Open Channels",
+      sessions: "No sessions found yet.",
+      openChat: "Open Chat",
+    },
+  },
   overview: {
     access: {
       title: "Gateway Access",
@@ -63,6 +89,8 @@ export const en: TranslationMap = {
       password: "Password (not stored)",
       sessionKey: "Default Session Key",
       language: "Language",
+      rememberToken: "Remember token in this browser",
+      passwordPlaceholder: "System or shared password",
       connectHint: "Click Connect to apply connection changes.",
       trustedProxy: "Authenticated via trusted proxy.",
     },
@@ -93,14 +121,43 @@ export const en: TranslationMap = {
       cronTitle: "Cron reminders",
       cronText: "Use isolated sessions for recurring runs.",
     },
+    devices: {
+      pendingTitle: "Pending device approvals ({count})",
+      roleLabel: "Role",
+      approve: "Approve",
+    },
+    fix: {
+      pairingTitle: "Pairing approval required",
+      pairingMessage: "Approve this browser/device before reconnecting.",
+      devicesDocs: "Devices CLI docs",
+      authTitle: "Gateway auth failed",
+      authMessage: "Use a fresh dashboard link or paste the current gateway token.",
+      dashboardDocs: "Dashboard auth docs",
+      secureTitle: "Secure context required",
+      secureMessage: "Open the dashboard on localhost or HTTPS (for example Tailscale Serve).",
+      insecureHttpDocs: "Insecure HTTP docs",
+      originTitle: "Origin blocked",
+      originMessage: "Open the UI from the gateway host, or add your dev origin allowlist.",
+      controlUiDocs: "Control UI docs",
+      genericTitle: "Connection troubleshooting",
+      genericMessage: "Verify gateway health and reconnect.",
+      troubleshootingDocs: "Gateway troubleshooting docs",
+      runLabel: "Run:",
+      copyCommands: "Copy commands",
+    },
     auth: {
       required: "This gateway requires auth. Add a token or password, then click Connect.",
       failed:
         "Auth failed. Re-copy a tokenized URL with {command}, or update the token, then click Connect.",
+      tokenizedUrlHint: "Generate a tokenized URL",
+      generateTokenHint: "Generate a new gateway token",
+      docsLabel: "Control UI auth docs",
     },
     insecure: {
       hint: "This page is HTTP, so the browser blocks device identity. Use HTTPS (Tailscale Serve) or open {url} on the gateway host.",
       stayHttp: "If you must stay on HTTP, set {config} (token-only).",
+      tailscaleDocsLabel: "Tailscale Serve docs",
+      httpDocsLabel: "Insecure HTTP docs",
     },
   },
   chat: {
@@ -112,8 +169,8 @@ export const en: TranslationMap = {
   },
   languages: {
     en: "English",
-    zhCN: "简体中文 (Simplified Chinese)",
-    zhTW: "繁體中文 (Traditional Chinese)",
-    ptBR: "Português (Brazilian Portuguese)",
+    zhCN: "Simplified Chinese",
+    zhTW: "Traditional Chinese",
+    ptBR: "Brazilian Portuguese",
   },
 };
