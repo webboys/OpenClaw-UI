@@ -176,6 +176,10 @@
       "destination": "/channels/zalo"
     },
     {
+      "source": "/providers/qq",
+      "destination": "/channels/qq"
+    },
+    {
       "source": "/providers/whatsapp",
       "destination": "/channels/whatsapp"
     },
@@ -894,6 +898,7 @@
                   "channels/msteams",
                   "channels/line",
                   "channels/matrix",
+                  "channels/qq",
                   "channels/zalo",
                   "channels/zalouser"
                 ]

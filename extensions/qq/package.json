@@ -1,0 +1,35 @@
+{
+  "name": "@openclaw/qq",
+  "version": "2026.2.19",
+  "description": "OpenClaw QQ channel plugin (Official Bot API)",
+  "type": "module",
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "openclaw": "workspace:*"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ],
+    "channel": {
+      "id": "qq",
+      "label": "QQ",
+      "selectionLabel": "QQ (Official Bot API)",
+      "docsPath": "/channels/qq",
+      "docsLabel": "qq",
+      "blurb": "QQ official bot callback + send API integration.",
+      "aliases": [
+        "qqbot"
+      ],
+      "order": 78,
+      "quickstartAllowFrom": true
+    },
+    "install": {
+      "npmSpec": "@openclaw/qq",
+      "localPath": "extensions/qq",
+      "defaultChoice": "npm"
+    }
+  }
+}
