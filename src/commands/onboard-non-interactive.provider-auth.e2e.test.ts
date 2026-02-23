@@ -227,6 +227,44 @@ describe("onboard (non-interactive): provider auth", () => {
     });
   }, 60_000);
 
+  it("infers Mistral auth choice from --mistral-api-key and sets default model", async () => {
+    await withOnboardEnv("openclaw-onboard-mistral-infer-", async (env) => {
+      const cfg = await runOnboardingAndReadConfig(env, {
+        mistralApiKey: "mistral-test-key",
+      });
+
+      expect(cfg.auth?.profiles?.["mistral:default"]?.provider).toBe("mistral");
+      expect(cfg.auth?.profiles?.["mistral:default"]?.mode).toBe("api_key");
+      expect(cfg.agents?.defaults?.model?.primary).toBe("mistral/mistral-large-latest");
+      await expectApiKeyProfile({
+        profileId: "mistral:default",
+        provider: "mistral",
+        key: "mistral-test-key",
+      });
+    });
+  }, 60_000);
+
+  it("stores Volcano Engine API key and sets default model", async () => {
+    await withOnboardEnv("openclaw-onboard-volcengine-", async (env) => {
+      const cfg = await runOnboardingAndReadConfig(env, {
+        authChoice: "volcengine-api-key",
+        volcengineApiKey: "volcengine-test-key",
+      });
+
+      expect(cfg.agents?.defaults?.model?.primary).toBe("volcengine-plan/ark-code-latest");
+    });
+  }, 60_000);
+
+  it("infers BytePlus auth choice from --byteplus-api-key and sets default model", async () => {
+    await withOnboardEnv("openclaw-onboard-byteplus-infer-", async (env) => {
+      const cfg = await runOnboardingAndReadConfig(env, {
+        byteplusApiKey: "byteplus-test-key",
+      });
+
+      expect(cfg.agents?.defaults?.model?.primary).toBe("byteplus-plan/ark-code-latest");
+    });
+  }, 60_000);
+
   it("stores Vercel AI Gateway API key and sets default model", async () => {
     await withOnboardEnv("openclaw-onboard-ai-gateway-", async (env) => {
       const cfg = await runOnboardingAndReadConfig(env, {

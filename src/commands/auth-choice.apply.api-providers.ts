@@ -24,6 +24,8 @@ import {
   applyKimiCodeProviderConfig,
   applyLitellmConfig,
   applyLitellmProviderConfig,
+  applyMistralConfig,
+  applyMistralProviderConfig,
   applyMoonshotConfig,
   applyMoonshotConfigCn,
   applyMoonshotProviderConfig,
@@ -46,6 +48,7 @@ import {
   LITELLM_DEFAULT_MODEL_REF,
   QIANFAN_DEFAULT_MODEL_REF,
   KIMI_CODING_MODEL_REF,
+  MISTRAL_DEFAULT_MODEL_REF,
   MOONSHOT_DEFAULT_MODEL_REF,
   SYNTHETIC_DEFAULT_MODEL_REF,
   TOGETHER_DEFAULT_MODEL_REF,
@@ -57,6 +60,7 @@ import {
   setGeminiApiKey,
   setLitellmApiKey,
   setKimiCodingApiKey,
+  setMistralApiKey,
   setMoonshotApiKey,
   setOpencodeZenApiKey,
   setSyntheticApiKey,
@@ -113,6 +117,8 @@ export async function applyAuthChoiceApiProviders(
       authChoice = "together-api-key";
     } else if (params.opts.tokenProvider === "huggingface") {
       authChoice = "huggingface-api-key";
+    } else if (params.opts.tokenProvider === "mistral") {
+      authChoice = "mistral-api-key";
     } else if (params.opts.tokenProvider === "opencode") {
       authChoice = "opencode-zen";
     } else if (params.opts.tokenProvider === "qianfan") {
@@ -678,6 +684,54 @@ export async function applyAuthChoiceApiProviders(
         applyDefaultConfig: applyXiaomiConfig,
         applyProviderConfig: applyXiaomiProviderConfig,
         noteDefault: XIAOMI_DEFAULT_MODEL_REF,
+        noteAgentModel,
+        prompter: params.prompter,
+      });
+      nextConfig = applied.config;
+      agentModelOverride = applied.agentModelOverride ?? agentModelOverride;
+    }
+    return { config: nextConfig, agentModelOverride };
+  }
+
+  if (authChoice === "mistral-api-key") {
+    let hasCredential = false;
+
+    if (!hasCredential && params.opts?.token && params.opts?.tokenProvider === "mistral") {
+      await setMistralApiKey(normalizeApiKeyInput(params.opts.token), params.agentDir);
+      hasCredential = true;
+    }
+
+    const envKey = resolveEnvApiKey("mistral");
+    if (envKey) {
+      const useExisting = await params.prompter.confirm({
+        message: `Use existing MISTRAL_API_KEY (${envKey.source}, ${formatApiKeyPreview(envKey.apiKey)})?`,
+        initialValue: true,
+      });
+      if (useExisting) {
+        await setMistralApiKey(envKey.apiKey, params.agentDir);
+        hasCredential = true;
+      }
+    }
+    if (!hasCredential) {
+      const key = await params.prompter.text({
+        message: "Enter Mistral API key",
+        validate: validateApiKeyInput,
+      });
+      await setMistralApiKey(normalizeApiKeyInput(String(key ?? "")), params.agentDir);
+    }
+    nextConfig = applyAuthProfileConfig(nextConfig, {
+      profileId: "mistral:default",
+      provider: "mistral",
+      mode: "api_key",
+    });
+    {
+      const applied = await applyDefaultModelChoice({
+        config: nextConfig,
+        setDefaultModel: params.setDefaultModel,
+        defaultModel: MISTRAL_DEFAULT_MODEL_REF,
+        applyDefaultConfig: applyMistralConfig,
+        applyProviderConfig: applyMistralProviderConfig,
+        noteDefault: MISTRAL_DEFAULT_MODEL_REF,
         noteAgentModel,
         prompter: params.prompter,
       });
