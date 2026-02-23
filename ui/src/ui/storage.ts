@@ -21,8 +21,11 @@ export type UiSettings = {
 
 export function loadSettings(): UiSettings {
   const defaultUrl = (() => {
-    const proto = location.protocol === "https:" ? "wss" : "ws";
-    return `${proto}://${location.host}`;
+    const preferredHost = "claw.vip996.pro";
+    const isLocalhost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+    const host = isLocalhost ? preferredHost : location.host;
+    const proto = host === preferredHost || location.protocol === "https:" ? "wss" : "ws";
+    return `${proto}://${host}`;
   })();
 
   const defaults: UiSettings = {
@@ -38,6 +41,7 @@ export function loadSettings(): UiSettings {
     navCollapsed: false,
     navBeginnerMode: true,
     navGroupsCollapsed: {},
+    locale: "zh-CN",
   };
 
   try {
@@ -90,7 +94,7 @@ export function loadSettings(): UiSettings {
         typeof parsed.navGroupsCollapsed === "object" && parsed.navGroupsCollapsed !== null
           ? parsed.navGroupsCollapsed
           : defaults.navGroupsCollapsed,
-      locale: isSupportedLocale(parsed.locale) ? parsed.locale : undefined,
+      locale: isSupportedLocale(parsed.locale) ? parsed.locale : defaults.locale,
     };
   } catch {
     return defaults;

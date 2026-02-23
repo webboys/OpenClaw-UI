@@ -1,4 +1,5 @@
 import type { GatewayBrowserClient } from "../gateway.ts";
+import { localizeUiError } from "../error-localization.ts";
 import type { AgentIdentityResult } from "../types.ts";
 
 export type AgentIdentityState = {
@@ -26,7 +27,7 @@ export async function loadAgentIdentity(state: AgentIdentityState, agentId: stri
       state.agentIdentityById = { ...state.agentIdentityById, [agentId]: res };
     }
   } catch (err) {
-    state.agentIdentityError = String(err);
+    state.agentIdentityError = localizeUiError(err);
   } finally {
     state.agentIdentityLoading = false;
   }
@@ -52,7 +53,7 @@ export async function loadAgentIdentities(state: AgentIdentityState, agentIds: s
       }
     }
   } catch (err) {
-    state.agentIdentityError = String(err);
+    state.agentIdentityError = localizeUiError(err);
   } finally {
     state.agentIdentityLoading = false;
   }

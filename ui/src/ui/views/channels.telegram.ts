@@ -2,7 +2,20 @@ import { html, nothing } from "lit";
 import { formatRelativeTimestamp } from "../format.ts";
 import type { ChannelAccountSnapshot, TelegramStatus } from "../types.ts";
 import { renderChannelConfigSection } from "./channels.config.ts";
+import { boolLabel, localizeChannelValue, renderChannelStatusList } from "./channels.shared.ts";
 import type { ChannelsProps } from "./channels.types.ts";
+import {
+  buttonClass,
+  calloutClass,
+  CARD_CLASS,
+  CARD_SUB_CLASS,
+  CARD_TITLE_CLASS,
+  LIST_CLASS,
+  LIST_ITEM_CLASS,
+  LIST_MAIN_CLASS,
+  LIST_SUB_CLASS,
+  LIST_TITLE_CLASS,
+} from "./tw.ts";
 
 export function renderTelegramCard(params: {
   props: ChannelsProps;
@@ -18,33 +31,27 @@ export function renderTelegramCard(params: {
     const botUsername = probe?.bot?.username;
     const label = account.name || account.accountId;
     return html`
-      <div class="account-card">
-        <div class="account-card-header">
-          <div class="account-card-title">
-            ${botUsername ? `@${botUsername}` : label}
-          </div>
-          <div class="account-card-id">${account.accountId}</div>
+      <div class=${LIST_ITEM_CLASS}>
+        <div class=${LIST_MAIN_CLASS}>
+          <div class=${LIST_TITLE_CLASS}>${botUsername ? `@${botUsername}` : label}</div>
+          <div class=${LIST_SUB_CLASS}>${account.accountId}</div>
         </div>
-        <div class="status-list account-card-status">
-          <div>
-            <span class="label">Running</span>
-            <span>${account.running ? "Yes" : "No"}</span>
-          </div>
-          <div>
-            <span class="label">Configured</span>
-            <span>${account.configured ? "Yes" : "No"}</span>
-          </div>
-          <div>
-            <span class="label">Last inbound</span>
-            <span>${account.lastInboundAt ? formatRelativeTimestamp(account.lastInboundAt) : "n/a"}</span>
-          </div>
+        <div class="w-full md:w-auto md:min-w-[280px]">
+          ${renderChannelStatusList([
+            { label: "运行中", value: boolLabel(account.running) },
+            { label: "已配置", value: boolLabel(account.configured) },
+            {
+              label: "最后入站",
+              value: account.lastInboundAt
+                ? formatRelativeTimestamp(account.lastInboundAt)
+                : "暂无",
+            },
+          ])}
           ${
             account.lastError
-              ? html`
-                <div class="account-card-error">
-                  ${account.lastError}
-                </div>
-              `
+              ? html`<div class="pt-2 text-[12px] text-[var(--danger)]">
+                  ${localizeChannelValue(account.lastError)}
+                </div>`
               : nothing
           }
         </div>
@@ -53,66 +60,60 @@ export function renderTelegramCard(params: {
   };
 
   return html`
-    <div class="card">
-      <div class="card-title">Telegram</div>
-      <div class="card-sub">Bot status and channel configuration.</div>
+    <div class=${CARD_CLASS}>
+      <div class=${CARD_TITLE_CLASS}>Telegram</div>
+      <div class=${CARD_SUB_CLASS}>机器人状态与通道配置。</div>
       ${accountCountLabel}
 
       ${
         hasMultipleAccounts
           ? html`
-            <div class="account-card-list">
+            <div class=${LIST_CLASS}>
               ${telegramAccounts.map((account) => renderAccountCard(account))}
             </div>
           `
-          : html`
-            <div class="status-list" style="margin-top: 16px;">
-              <div>
-                <span class="label">Configured</span>
-                <span>${telegram?.configured ? "Yes" : "No"}</span>
-              </div>
-              <div>
-                <span class="label">Running</span>
-                <span>${telegram?.running ? "Yes" : "No"}</span>
-              </div>
-              <div>
-                <span class="label">Mode</span>
-                <span>${telegram?.mode ?? "n/a"}</span>
-              </div>
-              <div>
-                <span class="label">Last start</span>
-                <span>${telegram?.lastStartAt ? formatRelativeTimestamp(telegram.lastStartAt) : "n/a"}</span>
-              </div>
-              <div>
-                <span class="label">Last probe</span>
-                <span>${telegram?.lastProbeAt ? formatRelativeTimestamp(telegram.lastProbeAt) : "n/a"}</span>
-              </div>
-            </div>
-          `
+          : renderChannelStatusList([
+              { label: "已配置", value: boolLabel(telegram?.configured) },
+              { label: "运行中", value: boolLabel(telegram?.running) },
+              { label: "模式", value: localizeChannelValue(telegram?.mode ?? "暂无") },
+              {
+                label: "最近启动",
+                value: telegram?.lastStartAt
+                  ? formatRelativeTimestamp(telegram.lastStartAt)
+                  : "暂无",
+              },
+              {
+                label: "最近探测",
+                value: telegram?.lastProbeAt
+                  ? formatRelativeTimestamp(telegram.lastProbeAt)
+                  : "暂无",
+              },
+            ])
       }
 
       ${
         telegram?.lastError
-          ? html`<div class="callout danger" style="margin-top: 12px;">
-            ${telegram.lastError}
+          ? html`<div class="${calloutClass("danger")} mt-3">
+            ${localizeChannelValue(telegram.lastError)}
           </div>`
           : nothing
       }
 
       ${
         telegram?.probe
-          ? html`<div class="callout" style="margin-top: 12px;">
-            Probe ${telegram.probe.ok ? "ok" : "failed"} ·
-            ${telegram.probe.status ?? ""} ${telegram.probe.error ?? ""}
+          ? html`<div class="${calloutClass("default")} mt-3">
+            探测 ${telegram.probe.ok ? "成功" : "失败"} ·
+            ${localizeChannelValue(telegram.probe.status)}
+            ${telegram.probe.error ? ` ${localizeChannelValue(telegram.probe.error)}` : ""}
           </div>`
           : nothing
       }
 
       ${renderChannelConfigSection({ channelId: "telegram", props })}
 
-      <div class="row" style="margin-top: 12px;">
-        <button class="btn" @click=${() => props.onRefresh(true)}>
-          Probe
+      <div class="mt-3">
+        <button class=${buttonClass()} @click=${() => props.onRefresh(true)}>
+          立即探测
         </button>
       </div>
     </div>

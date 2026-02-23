@@ -14,27 +14,27 @@ function row(overrides: Partial<SessionRow> & { key: string }): SessionRow {
 
 describe("parseSessionKey", () => {
   it("identifies main session (bare 'main')", () => {
-    expect(parseSessionKey("main")).toEqual({ prefix: "", fallbackName: "Main Session" });
+    expect(parseSessionKey("main")).toEqual({ prefix: "", fallbackName: "主会话" });
   });
 
   it("identifies main session (agent:main:main)", () => {
     expect(parseSessionKey("agent:main:main")).toEqual({
       prefix: "",
-      fallbackName: "Main Session",
+      fallbackName: "主会话",
     });
   });
 
   it("identifies subagent sessions", () => {
     expect(parseSessionKey("agent:main:subagent:18abfefe-1fa6-43cb-8ba8-ebdc9b43e253")).toEqual({
-      prefix: "Subagent:",
-      fallbackName: "Subagent:",
+      prefix: "子助手：",
+      fallbackName: "子助手：",
     });
   });
 
   it("identifies cron sessions", () => {
     expect(parseSessionKey("agent:main:cron:daily-briefing-uuid")).toEqual({
-      prefix: "Cron:",
-      fallbackName: "Cron Job:",
+      prefix: "定时任务：",
+      fallbackName: "定时任务：",
     });
   });
 
@@ -55,7 +55,7 @@ describe("parseSessionKey", () => {
   it("identifies group chat with known channel", () => {
     expect(parseSessionKey("agent:main:discord:group:guild-chan")).toEqual({
       prefix: "",
-      fallbackName: "Discord Group",
+      fallbackName: "Discord 群组",
     });
   });
 
@@ -69,18 +69,18 @@ describe("parseSessionKey", () => {
   it("identifies channel-prefixed legacy keys", () => {
     expect(parseSessionKey("bluebubbles:g-agent-main-bluebubbles-direct-+19257864429")).toEqual({
       prefix: "",
-      fallbackName: "iMessage Session",
+      fallbackName: "iMessage 会话",
     });
     expect(parseSessionKey("discord:123:456")).toEqual({
       prefix: "",
-      fallbackName: "Discord Session",
+      fallbackName: "Discord 会话",
     });
   });
 
   it("handles bare channel name as key", () => {
     expect(parseSessionKey("telegram")).toEqual({
       prefix: "",
-      fallbackName: "Telegram Session",
+      fallbackName: "Telegram 会话",
     });
   });
 
@@ -99,20 +99,20 @@ describe("parseSessionKey", () => {
 describe("resolveSessionDisplayName", () => {
   // ── Key-only fallbacks (no row) ──────────────────
 
-  it("returns 'Main Session' for agent:main:main key", () => {
-    expect(resolveSessionDisplayName("agent:main:main")).toBe("Main Session");
+  it("returns '主会话' for agent:main:main key", () => {
+    expect(resolveSessionDisplayName("agent:main:main")).toBe("主会话");
   });
 
-  it("returns 'Main Session' for bare 'main' key", () => {
-    expect(resolveSessionDisplayName("main")).toBe("Main Session");
+  it("returns '主会话' for bare 'main' key", () => {
+    expect(resolveSessionDisplayName("main")).toBe("主会话");
   });
 
-  it("returns 'Subagent:' for subagent key without row", () => {
-    expect(resolveSessionDisplayName("agent:main:subagent:abc-123")).toBe("Subagent:");
+  it("returns '子助手：' for subagent key without row", () => {
+    expect(resolveSessionDisplayName("agent:main:subagent:abc-123")).toBe("子助手：");
   });
 
-  it("returns 'Cron Job:' for cron key without row", () => {
-    expect(resolveSessionDisplayName("agent:main:cron:abc-123")).toBe("Cron Job:");
+  it("returns '定时任务：' for cron key without row", () => {
+    expect(resolveSessionDisplayName("agent:main:cron:abc-123")).toBe("定时任务：");
   });
 
   it("parses direct chat key with channel", () => {
@@ -122,7 +122,7 @@ describe("resolveSessionDisplayName", () => {
   });
 
   it("parses channel-prefixed legacy key", () => {
-    expect(resolveSessionDisplayName("discord:123:456")).toBe("Discord Session");
+    expect(resolveSessionDisplayName("discord:123:456")).toBe("Discord 会话");
   });
 
   it("returns raw key for unknown patterns", () => {
@@ -133,7 +133,7 @@ describe("resolveSessionDisplayName", () => {
 
   it("returns parsed fallback when row has no label or displayName", () => {
     expect(resolveSessionDisplayName("agent:main:main", row({ key: "agent:main:main" }))).toBe(
-      "Main Session",
+      "主会话",
     );
   });
 
@@ -186,7 +186,7 @@ describe("resolveSessionDisplayName", () => {
   it("uses parsed fallback when whitespace-only label and no displayName", () => {
     expect(
       resolveSessionDisplayName("discord:123:456", row({ key: "discord:123:456", label: "   " })),
-    ).toBe("Discord Session");
+    ).toBe("Discord 会话");
   });
 
   it("trims label and displayName", () => {
@@ -198,58 +198,58 @@ describe("resolveSessionDisplayName", () => {
 
   // ── Type prefixes applied to labels / displayNames ──
 
-  it("prefixes subagent label with Subagent:", () => {
+  it("prefixes subagent label with 子助手：", () => {
     expect(
       resolveSessionDisplayName(
         "agent:main:subagent:abc-123",
         row({ key: "agent:main:subagent:abc-123", label: "maintainer-v2" }),
       ),
-    ).toBe("Subagent: maintainer-v2");
+    ).toBe("子助手： maintainer-v2");
   });
 
-  it("prefixes subagent displayName with Subagent:", () => {
+  it("prefixes subagent displayName with 子助手：", () => {
     expect(
       resolveSessionDisplayName(
         "agent:main:subagent:abc-123",
         row({ key: "agent:main:subagent:abc-123", displayName: "Task Runner" }),
       ),
-    ).toBe("Subagent: Task Runner");
+    ).toBe("子助手： Task Runner");
   });
 
-  it("prefixes cron label with Cron:", () => {
+  it("prefixes cron label with 定时任务：", () => {
     expect(
       resolveSessionDisplayName(
         "agent:main:cron:abc-123",
         row({ key: "agent:main:cron:abc-123", label: "daily-briefing" }),
       ),
-    ).toBe("Cron: daily-briefing");
+    ).toBe("定时任务： daily-briefing");
   });
 
-  it("prefixes cron displayName with Cron:", () => {
+  it("prefixes cron displayName with 定时任务：", () => {
     expect(
       resolveSessionDisplayName(
         "agent:main:cron:abc-123",
         row({ key: "agent:main:cron:abc-123", displayName: "Nightly Sync" }),
       ),
-    ).toBe("Cron: Nightly Sync");
+    ).toBe("定时任务： Nightly Sync");
   });
 
-  it("does not double-prefix cron labels that already include Cron:", () => {
+  it("does not double-prefix cron labels that already include 定时任务：", () => {
     expect(
       resolveSessionDisplayName(
         "agent:main:cron:abc-123",
-        row({ key: "agent:main:cron:abc-123", label: "Cron: Nightly Sync" }),
+        row({ key: "agent:main:cron:abc-123", label: "定时任务： Nightly Sync" }),
       ),
-    ).toBe("Cron: Nightly Sync");
+    ).toBe("定时任务： Nightly Sync");
   });
 
-  it("does not double-prefix subagent display names that already include Subagent:", () => {
+  it("does not double-prefix subagent display names that already include 子助手：", () => {
     expect(
       resolveSessionDisplayName(
         "agent:main:subagent:abc-123",
-        row({ key: "agent:main:subagent:abc-123", displayName: "Subagent: Runner" }),
+        row({ key: "agent:main:subagent:abc-123", displayName: "子助手： Runner" }),
       ),
-    ).toBe("Subagent: Runner");
+    ).toBe("子助手： Runner");
   });
 
   it("does not prefix non-typed sessions with labels", () => {

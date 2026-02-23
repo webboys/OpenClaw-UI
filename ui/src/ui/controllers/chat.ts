@@ -1,4 +1,5 @@
 import { extractText } from "../chat/message-extract.ts";
+import { localizeUiError } from "../error-localization.ts";
 import type { GatewayBrowserClient } from "../gateway.ts";
 import type { ChatAttachment } from "../ui-types.ts";
 import { generateUUID } from "../uuid.ts";
@@ -44,7 +45,7 @@ export async function loadChatHistory(state: ChatState) {
     state.chatMessages = Array.isArray(res.messages) ? res.messages : [];
     state.chatThinkingLevel = res.thinkingLevel ?? null;
   } catch (err) {
-    state.lastError = String(err);
+    state.lastError = localizeUiError(err);
   } finally {
     state.chatLoading = false;
   }
@@ -146,7 +147,7 @@ export async function sendChatMessage(
     });
     return runId;
   } catch (err) {
-    const error = String(err);
+    const error = localizeUiError(err);
     state.chatRunId = null;
     state.chatStream = null;
     state.chatStreamStartedAt = null;
@@ -155,7 +156,7 @@ export async function sendChatMessage(
       ...state.chatMessages,
       {
         role: "assistant",
-        content: [{ type: "text", text: "Error: " + error }],
+        content: [{ type: "text", text: "错误：" + error }],
         timestamp: Date.now(),
       },
     ];
@@ -177,7 +178,7 @@ export async function abortChatRun(state: ChatState): Promise<boolean> {
     );
     return true;
   } catch (err) {
-    state.lastError = String(err);
+    state.lastError = localizeUiError(err);
     return false;
   }
 }
@@ -235,7 +236,7 @@ export function handleChatEvent(state: ChatState, payload?: ChatEventPayload) {
     state.chatStream = null;
     state.chatRunId = null;
     state.chatStreamStartedAt = null;
-    state.lastError = payload.errorMessage ?? "chat error";
+    state.lastError = localizeUiError(payload.errorMessage ?? "聊天请求失败。");
   }
   return payload.state;
 }

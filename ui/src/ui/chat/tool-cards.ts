@@ -97,7 +97,7 @@ export function renderToolCardSidebar(card: ToolCard, onOpenSidebar?: (content: 
         </div>
         ${
           canClick
-            ? html`<span class="chat-tool-card__action">${hasText ? "View" : ""} ${icons.check}</span>`
+            ? html`<span class="chat-tool-card__action">${hasText ? "查看" : ""} ${icons.check}</span>`
             : nothing
         }
         ${isEmpty && !canClick ? html`<span class="chat-tool-card__status">${icons.check}</span>` : nothing}
@@ -106,7 +106,7 @@ export function renderToolCardSidebar(card: ToolCard, onOpenSidebar?: (content: 
       ${
         isEmpty
           ? html`
-              <div class="chat-tool-card__status-text muted">Completed</div>
+              <div class="chat-tool-card__status-text muted">已完成</div>
             `
           : nothing
       }

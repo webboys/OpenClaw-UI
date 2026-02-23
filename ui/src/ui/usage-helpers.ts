@@ -31,6 +31,64 @@ export type UsageSessionQueryTarget = {
   } | null;
 };
 
+const QUERY_KEY_ALIASES: Record<string, string> = {
+  // Canonical keys
+  agent: "agent",
+  channel: "channel",
+  chat: "chat",
+  provider: "provider",
+  model: "model",
+  tool: "tool",
+  label: "label",
+  key: "key",
+  session: "session",
+  id: "id",
+  has: "has",
+  mintokens: "mintokens",
+  maxtokens: "maxtokens",
+  mincost: "mincost",
+  maxcost: "maxcost",
+  minmessages: "minmessages",
+  maxmessages: "maxmessages",
+  // Chinese aliases
+  智能体: "agent",
+  助手: "agent",
+  频道: "channel",
+  渠道: "channel",
+  会话类型: "chat",
+  聊天: "chat",
+  服务商: "provider",
+  模型: "model",
+  工具: "tool",
+  标题: "label",
+  会话键: "key",
+  会话: "session",
+  会话id: "id",
+  会话编号: "id",
+  条件: "has",
+  最小令牌: "mintokens",
+  最大令牌: "maxtokens",
+  最小成本: "mincost",
+  最大成本: "maxcost",
+  最小消息数: "minmessages",
+  最大消息数: "maxmessages",
+};
+
+const HAS_VALUE_ALIASES: Record<string, string> = {
+  tools: "tools",
+  errors: "errors",
+  context: "context",
+  usage: "usage",
+  model: "model",
+  provider: "provider",
+  工具: "tools",
+  错误: "errors",
+  上下文: "context",
+  用量: "usage",
+  模型: "model",
+  服务商: "provider",
+};
+
 const QUERY_KEYS = new Set([
   "agent",
   "channel",
@@ -52,6 +110,22 @@ const QUERY_KEYS = new Set([
 ]);
 
 const normalizeQueryText = (value: string): string => value.trim().toLowerCase();
+
+export const canonicalizeQueryKey = (value: string | undefined): string => {
+  const normalized = normalizeQueryText(value ?? "");
+  if (!normalized) {
+    return "";
+  }
+  return QUERY_KEY_ALIASES[normalized] ?? normalized;
+};
+
+export const canonicalizeHasValue = (value: string | undefined): string => {
+  const normalized = normalizeQueryText(value ?? "");
+  if (!normalized) {
+    return "";
+  }
+  return HAS_VALUE_ALIASES[normalized] ?? normalized;
+};
 
 const globToRegex = (pattern: string): RegExp => {
   const escaped = pattern
@@ -151,7 +225,7 @@ export const matchesUsageQuery = (
     return getSessionText(session).some((text) => text.includes(value));
   }
 
-  const key = normalizeQueryText(term.key);
+  const key = canonicalizeQueryKey(term.key);
   switch (key) {
     case "agent":
       return session.agentId?.toLowerCase().includes(value) ?? false;
@@ -181,7 +255,7 @@ export const matchesUsageQuery = (
         (session.sessionId?.toLowerCase().includes(value) ?? false)
       );
     case "has":
-      switch (value) {
+      switch (canonicalizeHasValue(value)) {
         case "tools":
           return (session.usage?.toolUsage?.totalCalls ?? 0) > 0;
         case "errors":
@@ -258,27 +332,27 @@ export const filterSessionsByQuery = <TSession extends UsageSessionQueryTarget>(
     if (!term.key) {
       continue;
     }
-    const normalizedKey = normalizeQueryText(term.key);
-    if (!QUERY_KEYS.has(normalizedKey)) {
-      warnings.push(`Unknown filter: ${term.key}`);
+    const canonicalKey = canonicalizeQueryKey(term.key);
+    if (!QUERY_KEYS.has(canonicalKey)) {
+      warnings.push(`未知筛选键：${term.key}`);
       continue;
     }
     if (term.value === "") {
-      warnings.push(`Missing value for ${term.key}`);
+      warnings.push(`缺少筛选值：${term.key}`);
     }
-    if (normalizedKey === "has") {
+    if (canonicalKey === "has") {
       const allowed = new Set(["tools", "errors", "context", "usage", "model", "provider"]);
-      if (term.value && !allowed.has(normalizeQueryText(term.value))) {
-        warnings.push(`Unknown has:${term.value}`);
+      if (term.value && !allowed.has(canonicalizeHasValue(term.value))) {
+        warnings.push(`未知的 has 值：${term.value}`);
       }
     }
     if (
       ["mintokens", "maxtokens", "mincost", "maxcost", "minmessages", "maxmessages"].includes(
-        normalizedKey,
+        canonicalKey,
       )
     ) {
       if (term.value && parseQueryNumber(term.value) === null) {
-        warnings.push(`Invalid number for ${term.key}`);
+        warnings.push(`数值无效：${term.key}`);
       }
     }
   }
@@ -309,9 +383,9 @@ export function parseToolSummary(content: string) {
   const totalCalls = sortedTools.reduce((sum, [, count]) => sum + count, 0);
   const summary =
     sortedTools.length > 0
-      ? `Tools: ${sortedTools
+      ? `工具：${sortedTools
           .map(([name, count]) => `${name}×${count}`)
-          .join(", ")} (${totalCalls} calls)`
+          .join("，")}（共 ${totalCalls} 次）`
       : "";
   return {
     tools: sortedTools,

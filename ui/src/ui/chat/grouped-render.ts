@@ -1,6 +1,8 @@
 import { html, nothing } from "lit";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import type { AssistantIdentity } from "../assistant-identity.ts";
+import { getUiLocale } from "../format.ts";
+import { icons } from "../icons.ts";
 import { toSanitizedMarkdownHtml } from "../markdown.ts";
 import { detectTextDirection } from "../text-direction.ts";
 import type { MessageGroup } from "../types/chat-types.ts";
@@ -17,6 +19,8 @@ type ImageBlock = {
   url: string;
   alt?: string;
 };
+
+const LEGACY_ASSISTANT_AVATARS = new Set(["a", "🤖", "🦞"]);
 
 function extractImages(message: unknown): ImageBlock[] {
   const m = message as Record<string, unknown>;
@@ -76,11 +80,11 @@ export function renderStreamingGroup(
   onOpenSidebar?: (content: string) => void,
   assistant?: AssistantIdentity,
 ) {
-  const timestamp = new Date(startedAt).toLocaleTimeString([], {
+  const timestamp = new Date(startedAt).toLocaleTimeString(getUiLocale(), {
     hour: "numeric",
     minute: "2-digit",
   });
-  const name = assistant?.name ?? "Assistant";
+  const name = assistant?.name ?? "助手";
 
   return html`
     <div class="chat-group assistant">
@@ -114,16 +118,20 @@ export function renderMessageGroup(
   },
 ) {
   const normalizedRole = normalizeRoleForGrouping(group.role);
-  const assistantName = opts.assistantName ?? "Assistant";
+  const assistantName = opts.assistantName ?? "助手";
   const who =
     normalizedRole === "user"
-      ? "You"
+      ? "你"
       : normalizedRole === "assistant"
         ? assistantName
-        : normalizedRole;
+        : normalizedRole === "tool"
+          ? "工具"
+          : normalizedRole === "system"
+            ? "系统"
+            : "未知";
   const roleClass =
     normalizedRole === "user" ? "user" : normalizedRole === "assistant" ? "assistant" : "other";
-  const timestamp = new Date(group.timestamp).toLocaleTimeString([], {
+  const timestamp = new Date(group.timestamp).toLocaleTimeString(getUiLocale(), {
     hour: "numeric",
     minute: "2-digit",
   });
@@ -156,7 +164,7 @@ export function renderMessageGroup(
 
 function renderAvatar(role: string, assistant?: Pick<AssistantIdentity, "name" | "avatar">) {
   const normalized = normalizeRoleForGrouping(role);
-  const assistantName = assistant?.name?.trim() || "Assistant";
+  const assistantName = assistant?.name?.trim() || "助手";
   const assistantAvatar = assistant?.avatar?.trim() || "";
   const initial =
     normalized === "user"
@@ -183,15 +191,41 @@ function renderAvatar(role: string, assistant?: Pick<AssistantIdentity, "name" |
         alt="${assistantName}"
       />`;
     }
+    if (isLegacyAssistantAvatar(assistantAvatar)) {
+      return renderAssistantAvatarGlyph(assistantName);
+    }
     return html`<div class="chat-avatar ${className}">${assistantAvatar}</div>`;
+  }
+
+  if (normalized === "assistant") {
+    return renderAssistantAvatarGlyph(assistantName);
   }
 
   return html`<div class="chat-avatar ${className}">${initial}</div>`;
 }
 
+function isLegacyAssistantAvatar(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  return LEGACY_ASSISTANT_AVATARS.has(normalized);
+}
+
+function renderAssistantAvatarGlyph(assistantName: string) {
+  return html`
+    <div class="chat-avatar assistant chat-avatar--glyph" title="${assistantName}">
+      ${icons.assistantBadge}
+    </div>
+  `;
+}
+
 function isAvatarUrl(value: string): boolean {
   return (
-    /^https?:\/\//i.test(value) || /^data:image\//i.test(value) || value.startsWith("/") // Relative paths from avatar endpoint
+    /^https?:\/\//i.test(value) ||
+    /^data:image\//i.test(value) ||
+    value.startsWith("/") ||
+    value.startsWith("./") ||
+    value.startsWith("../") ||
+    value.startsWith("avatar/") ||
+    /\.(png|jpe?g|gif|webp|svg|ico)(?:$|[?#])/i.test(value)
   );
 }
 
@@ -206,7 +240,7 @@ function renderMessageImages(images: ImageBlock[]) {
         (img) => html`
           <img
             src=${img.url}
-            alt=${img.alt ?? "Attached image"}
+            alt=${img.alt ?? "已附加图片"}
             class="chat-message-image"
             @click=${() => window.open(img.url, "_blank")}
           />

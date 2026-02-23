@@ -59,7 +59,7 @@ describe("config view", () => {
     );
 
     const saveButton = Array.from(container.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.trim() === "Save",
+      (btn) => btn.textContent?.trim() === "保存",
     );
     expect(saveButton).not.toBeUndefined();
     expect(saveButton?.disabled).toBe(false);
@@ -79,7 +79,7 @@ describe("config view", () => {
     );
 
     const saveButton = Array.from(container.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.trim() === "Save",
+      (btn) => btn.textContent?.trim() === "保存",
     );
     expect(saveButton).not.toBeUndefined();
     expect(saveButton?.disabled).toBe(true);
@@ -98,10 +98,10 @@ describe("config view", () => {
     );
 
     const saveButton = Array.from(container.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.trim() === "Save",
+      (btn) => btn.textContent?.trim() === "保存",
     );
     const applyButton = Array.from(container.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.trim() === "Apply",
+      (btn) => btn.textContent?.trim() === "应用",
     );
     expect(saveButton).not.toBeUndefined();
     expect(applyButton).not.toBeUndefined();
@@ -122,10 +122,10 @@ describe("config view", () => {
     );
 
     const saveButton = Array.from(container.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.trim() === "Save",
+      (btn) => btn.textContent?.trim() === "保存",
     );
     const applyButton = Array.from(container.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.trim() === "Apply",
+      (btn) => btn.textContent?.trim() === "应用",
     );
     expect(saveButton).not.toBeUndefined();
     expect(applyButton).not.toBeUndefined();
@@ -145,7 +145,7 @@ describe("config view", () => {
     );
 
     const btn = Array.from(container.querySelectorAll("button")).find(
-      (b) => b.textContent?.trim() === "Raw",
+      (b) => b.textContent?.trim() === "原始",
     );
     expect(btn).toBeTruthy();
     btn?.click();
@@ -171,7 +171,7 @@ describe("config view", () => {
     );
 
     const btn = Array.from(container.querySelectorAll("button")).find(
-      (b) => b.textContent?.trim() === "Gateway",
+      (b) => b.textContent?.trim() === "网关",
     );
     expect(btn).toBeTruthy();
     btn?.click();

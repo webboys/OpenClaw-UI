@@ -2,7 +2,9 @@ import { html, nothing } from "lit";
 import { formatRelativeTimestamp, formatDurationHuman } from "../format.ts";
 import type { WhatsAppStatus } from "../types.ts";
 import { renderChannelConfigSection } from "./channels.config.ts";
+import { boolLabel, localizeChannelValue, renderChannelStatusList } from "./channels.shared.ts";
 import type { ChannelsProps } from "./channels.types.ts";
+import { buttonClass, calloutClass, CARD_CLASS, CARD_SUB_CLASS, CARD_TITLE_CLASS } from "./tw.ts";
 
 export function renderWhatsAppCard(params: {
   props: ChannelsProps;
@@ -12,103 +14,91 @@ export function renderWhatsAppCard(params: {
   const { props, whatsapp, accountCountLabel } = params;
 
   return html`
-    <div class="card">
-      <div class="card-title">WhatsApp</div>
-      <div class="card-sub">Link WhatsApp Web and monitor connection health.</div>
+    <div class=${CARD_CLASS}>
+      <div class=${CARD_TITLE_CLASS}>WhatsApp</div>
+      <div class=${CARD_SUB_CLASS}>连接 WhatsApp Web 并监控在线状态。</div>
       ${accountCountLabel}
 
-      <div class="status-list" style="margin-top: 16px;">
-        <div>
-          <span class="label">Configured</span>
-          <span>${whatsapp?.configured ? "Yes" : "No"}</span>
-        </div>
-        <div>
-          <span class="label">Linked</span>
-          <span>${whatsapp?.linked ? "Yes" : "No"}</span>
-        </div>
-        <div>
-          <span class="label">Running</span>
-          <span>${whatsapp?.running ? "Yes" : "No"}</span>
-        </div>
-        <div>
-          <span class="label">Connected</span>
-          <span>${whatsapp?.connected ? "Yes" : "No"}</span>
-        </div>
-        <div>
-          <span class="label">Last connect</span>
-          <span>
-            ${whatsapp?.lastConnectedAt ? formatRelativeTimestamp(whatsapp.lastConnectedAt) : "n/a"}
-          </span>
-        </div>
-        <div>
-          <span class="label">Last message</span>
-          <span>
-            ${whatsapp?.lastMessageAt ? formatRelativeTimestamp(whatsapp.lastMessageAt) : "n/a"}
-          </span>
-        </div>
-        <div>
-          <span class="label">Auth age</span>
-          <span>
-            ${whatsapp?.authAgeMs != null ? formatDurationHuman(whatsapp.authAgeMs) : "n/a"}
-          </span>
-        </div>
-      </div>
+      ${renderChannelStatusList([
+        { label: "已配置", value: boolLabel(whatsapp?.configured) },
+        { label: "已绑定", value: boolLabel(whatsapp?.linked) },
+        { label: "运行中", value: boolLabel(whatsapp?.running) },
+        { label: "已连接", value: boolLabel(whatsapp?.connected) },
+        {
+          label: "最近连接",
+          value: whatsapp?.lastConnectedAt
+            ? formatRelativeTimestamp(whatsapp.lastConnectedAt)
+            : "暂无",
+        },
+        {
+          label: "最近消息",
+          value: whatsapp?.lastMessageAt ? formatRelativeTimestamp(whatsapp.lastMessageAt) : "暂无",
+        },
+        {
+          label: "认证时长",
+          value: whatsapp?.authAgeMs != null ? formatDurationHuman(whatsapp.authAgeMs) : "暂无",
+        },
+      ])}
 
       ${
         whatsapp?.lastError
-          ? html`<div class="callout danger" style="margin-top: 12px;">
-            ${whatsapp.lastError}
+          ? html`<div class="${calloutClass("danger")} mt-3">
+            ${localizeChannelValue(whatsapp.lastError)}
           </div>`
           : nothing
       }
 
       ${
         props.whatsappMessage
-          ? html`<div class="callout" style="margin-top: 12px;">
-            ${props.whatsappMessage}
+          ? html`<div class="${calloutClass("default")} mt-3">
+            ${localizeChannelValue(props.whatsappMessage)}
           </div>`
           : nothing
       }
 
       ${
         props.whatsappQrDataUrl
-          ? html`<div class="qr-wrap">
-            <img src=${props.whatsappQrDataUrl} alt="WhatsApp QR" />
+          ? html`<div class="mt-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg-elevated)] p-3">
+            <img
+              src=${props.whatsappQrDataUrl}
+              alt="WhatsApp 二维码"
+              class="mx-auto max-w-[260px] rounded-[var(--radius-sm)] border border-[var(--border)]"
+            />
           </div>`
           : nothing
       }
 
-      <div class="row" style="margin-top: 14px; flex-wrap: wrap;">
+      <div class="mt-3 flex flex-wrap gap-2">
         <button
-          class="btn primary"
+          class=${buttonClass({ tone: "primary" })}
           ?disabled=${props.whatsappBusy}
           @click=${() => props.onWhatsAppStart(false)}
         >
-          ${props.whatsappBusy ? "Working…" : "Show QR"}
+          ${props.whatsappBusy ? "处理中…" : "显示二维码"}
         </button>
         <button
-          class="btn"
+          class=${buttonClass()}
           ?disabled=${props.whatsappBusy}
           @click=${() => props.onWhatsAppStart(true)}
         >
-          Relink
+          重新绑定
         </button>
         <button
-          class="btn"
+          class=${buttonClass()}
           ?disabled=${props.whatsappBusy}
           @click=${() => props.onWhatsAppWait()}
         >
-          Wait for scan
+          等待扫码
         </button>
         <button
-          class="btn danger"
+          class=${buttonClass({ tone: "danger" })}
           ?disabled=${props.whatsappBusy}
           @click=${() => props.onWhatsAppLogout()}
         >
-          Logout
+          登出
         </button>
-        <button class="btn" @click=${() => props.onRefresh(true)}>
-          Refresh
+        <button class=${buttonClass()} @click=${() => props.onRefresh(true)}>
+          刷新
         </button>
       </div>
 

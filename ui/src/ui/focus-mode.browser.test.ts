@@ -12,9 +12,12 @@ describe("chat focus mode", () => {
     expect(shell).not.toBeNull();
     expect(shell?.classList.contains("shell--chat-focus")).toBe(false);
 
-    const toggle = app.querySelector<HTMLButtonElement>('button[title^="Toggle focus mode"]');
-    expect(toggle).not.toBeNull();
-    toggle?.click();
+    const toggleButtons = app.querySelectorAll<HTMLButtonElement>(
+      ".chat-controls button.btn--icon[aria-pressed]",
+    );
+    const focusToggle = toggleButtons.item(toggleButtons.length - 1) ?? null;
+    expect(focusToggle).not.toBeNull();
+    focusToggle?.click();
 
     await app.updateComplete;
     expect(shell?.classList.contains("shell--chat-focus")).toBe(true);

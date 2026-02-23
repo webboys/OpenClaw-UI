@@ -85,6 +85,7 @@ export const zh_TW: TranslationMap = {
       title: "閘道連線",
       subtitle: "設定 WebUI 如何連線到閘道並完成驗證。",
       wsUrl: "WebSocket 位址",
+      wsUrlHint: "可貼上 ws://、wss://，或控制台 http(s) 連結（會自動擷取 Token）。",
       token: "閘道 Token",
       password: "密碼（僅本次工作階段）",
       sessionKey: "預設 Session Key",
@@ -143,6 +144,7 @@ export const zh_TW: TranslationMap = {
       genericMessage: "先確認閘道健康狀態，再重新連線。",
       troubleshootingDocs: "閘道疑難排解文件",
       runLabel: "執行命令：",
+      rawErrorLabel: "檢視原始錯誤",
       copyCommands: "複製命令",
     },
     auth: {

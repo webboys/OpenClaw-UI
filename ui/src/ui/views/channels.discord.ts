@@ -2,7 +2,9 @@ import { html, nothing } from "lit";
 import { formatRelativeTimestamp } from "../format.ts";
 import type { DiscordStatus } from "../types.ts";
 import { renderChannelConfigSection } from "./channels.config.ts";
+import { boolLabel, localizeChannelValue, renderChannelStatusList } from "./channels.shared.ts";
 import type { ChannelsProps } from "./channels.types.ts";
+import { buttonClass, calloutClass, CARD_CLASS, CARD_SUB_CLASS, CARD_TITLE_CLASS } from "./tw.ts";
 
 export function renderDiscordCard(params: {
   props: ChannelsProps;
@@ -12,52 +14,47 @@ export function renderDiscordCard(params: {
   const { props, discord, accountCountLabel } = params;
 
   return html`
-    <div class="card">
-      <div class="card-title">Discord</div>
-      <div class="card-sub">Bot status and channel configuration.</div>
+    <div class=${CARD_CLASS}>
+      <div class=${CARD_TITLE_CLASS}>Discord</div>
+      <div class=${CARD_SUB_CLASS}>机器人状态与通道配置。</div>
       ${accountCountLabel}
 
-      <div class="status-list" style="margin-top: 16px;">
-        <div>
-          <span class="label">Configured</span>
-          <span>${discord?.configured ? "Yes" : "No"}</span>
-        </div>
-        <div>
-          <span class="label">Running</span>
-          <span>${discord?.running ? "Yes" : "No"}</span>
-        </div>
-        <div>
-          <span class="label">Last start</span>
-          <span>${discord?.lastStartAt ? formatRelativeTimestamp(discord.lastStartAt) : "n/a"}</span>
-        </div>
-        <div>
-          <span class="label">Last probe</span>
-          <span>${discord?.lastProbeAt ? formatRelativeTimestamp(discord.lastProbeAt) : "n/a"}</span>
-        </div>
-      </div>
+      ${renderChannelStatusList([
+        { label: "已配置", value: boolLabel(discord?.configured) },
+        { label: "运行中", value: boolLabel(discord?.running) },
+        {
+          label: "最近启动",
+          value: discord?.lastStartAt ? formatRelativeTimestamp(discord.lastStartAt) : "暂无",
+        },
+        {
+          label: "最近探测",
+          value: discord?.lastProbeAt ? formatRelativeTimestamp(discord.lastProbeAt) : "暂无",
+        },
+      ])}
 
       ${
         discord?.lastError
-          ? html`<div class="callout danger" style="margin-top: 12px;">
-            ${discord.lastError}
+          ? html`<div class="${calloutClass("danger")} mt-3">
+            ${localizeChannelValue(discord.lastError)}
           </div>`
           : nothing
       }
 
       ${
         discord?.probe
-          ? html`<div class="callout" style="margin-top: 12px;">
-            Probe ${discord.probe.ok ? "ok" : "failed"} ·
-            ${discord.probe.status ?? ""} ${discord.probe.error ?? ""}
+          ? html`<div class="${calloutClass("default")} mt-3">
+            探测 ${discord.probe.ok ? "成功" : "失败"} ·
+            ${localizeChannelValue(discord.probe.status)}
+            ${discord.probe.error ? ` ${localizeChannelValue(discord.probe.error)}` : ""}
           </div>`
           : nothing
       }
 
       ${renderChannelConfigSection({ channelId: "discord", props })}
 
-      <div class="row" style="margin-top: 12px;">
-        <button class="btn" @click=${() => props.onRefresh(true)}>
-          Probe
+      <div class="mt-3">
+        <button class=${buttonClass()} @click=${() => props.onRefresh(true)}>
+          立即探测
         </button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import type { GatewayBrowserClient } from "../gateway.ts";
+import { localizeUiError } from "../error-localization.ts";
 import type { LogEntry, LogLevel } from "../types.ts";
 
 export type LogsState = {
@@ -138,7 +139,7 @@ export async function loadLogs(state: LogsState, opts?: { reset?: boolean; quiet
     state.logsTruncated = Boolean(payload.truncated);
     state.logsLastFetchAt = Date.now();
   } catch (err) {
-    state.logsError = String(err);
+    state.logsError = localizeUiError(err);
   } finally {
     if (!opts?.quiet) {
       state.logsLoading = false;

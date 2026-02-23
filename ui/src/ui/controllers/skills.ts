@@ -1,5 +1,6 @@
 import type { GatewayBrowserClient } from "../gateway.ts";
 import type { SkillStatusReport } from "../types.ts";
+import { localizeUiError, localizeUiText } from "../error-localization.ts";
 
 export type SkillsState = {
   client: GatewayBrowserClient | null;
@@ -37,10 +38,7 @@ function setSkillMessage(state: SkillsState, key: string, message?: SkillMessage
 }
 
 function getErrorMessage(err: unknown) {
-  if (err instanceof Error) {
-    return err.message;
-  }
-  return String(err);
+  return localizeUiError(err);
 }
 
 export async function loadSkills(state: SkillsState, options?: LoadSkillsOptions) {
@@ -82,7 +80,7 @@ export async function updateSkillEnabled(state: SkillsState, skillKey: string, e
     await loadSkills(state);
     setSkillMessage(state, skillKey, {
       kind: "success",
-      message: enabled ? "Skill enabled" : "Skill disabled",
+      message: enabled ? localizeUiText("能力已启用。") : localizeUiText("能力已禁用。"),
     });
   } catch (err) {
     const message = getErrorMessage(err);
@@ -108,7 +106,7 @@ export async function saveSkillApiKey(state: SkillsState, skillKey: string) {
     await loadSkills(state);
     setSkillMessage(state, skillKey, {
       kind: "success",
-      message: "API key saved",
+      message: localizeUiText("接口密钥已保存。"),
     });
   } catch (err) {
     const message = getErrorMessage(err);
@@ -142,7 +140,7 @@ export async function installSkill(
     await loadSkills(state);
     setSkillMessage(state, skillKey, {
       kind: "success",
-      message: result?.message ?? "Installed",
+      message: result?.message ? localizeUiText(result.message) : localizeUiText("已安装。"),
     });
   } catch (err) {
     const message = getErrorMessage(err);

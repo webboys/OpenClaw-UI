@@ -1,4 +1,5 @@
 import { toNumber } from "../format.ts";
+import { localizeUiError } from "../error-localization.ts";
 import type { GatewayBrowserClient } from "../gateway.ts";
 import type { SessionsListResult } from "../types.ts";
 
@@ -51,7 +52,7 @@ export async function loadSessions(
       state.sessionsResult = res;
     }
   } catch (err) {
-    state.sessionsError = String(err);
+    state.sessionsError = localizeUiError(err);
   } finally {
     state.sessionsLoading = false;
   }
@@ -87,7 +88,7 @@ export async function patchSession(
     await state.client.request("sessions.patch", params);
     await loadSessions(state);
   } catch (err) {
-    state.sessionsError = String(err);
+    state.sessionsError = localizeUiError(err);
   }
 }
 
@@ -99,7 +100,7 @@ export async function deleteSession(state: SessionsState, key: string): Promise<
     return false;
   }
   const confirmed = window.confirm(
-    `Delete session "${key}"?\n\nDeletes the session entry and archives its transcript.`,
+    `确定删除会话“${key}”吗？\n\n这会删除会话条目并归档其对话记录。`,
   );
   if (!confirmed) {
     return false;
@@ -110,7 +111,7 @@ export async function deleteSession(state: SessionsState, key: string): Promise<
     await state.client.request("sessions.delete", { key, deleteTranscript: true });
     return true;
   } catch (err) {
-    state.sessionsError = String(err);
+    state.sessionsError = localizeUiError(err);
     return false;
   } finally {
     state.sessionsLoading = false;

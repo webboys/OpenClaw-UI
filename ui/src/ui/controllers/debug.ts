@@ -1,4 +1,5 @@
 import type { GatewayBrowserClient } from "../gateway.ts";
+import { localizeUiError } from "../error-localization.ts";
 import type { HealthSnapshot, StatusSummary } from "../types.ts";
 
 export type DebugState = {
@@ -36,7 +37,7 @@ export async function loadDebug(state: DebugState) {
     state.debugModels = Array.isArray(modelPayload?.models) ? modelPayload?.models : [];
     state.debugHeartbeat = heartbeat;
   } catch (err) {
-    state.debugCallError = String(err);
+    state.debugCallError = localizeUiError(err);
   } finally {
     state.debugLoading = false;
   }
@@ -55,6 +56,6 @@ export async function callDebugMethod(state: DebugState) {
     const res = await state.client.request(state.debugCallMethod.trim(), params);
     state.debugCallResult = JSON.stringify(res, null, 2);
   } catch (err) {
-    state.debugCallError = String(err);
+    state.debugCallError = localizeUiError(err);
   }
 }

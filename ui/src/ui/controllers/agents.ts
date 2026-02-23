@@ -1,4 +1,5 @@
 import type { GatewayBrowserClient } from "../gateway.ts";
+import { localizeUiError } from "../error-localization.ts";
 import type { AgentsListResult } from "../types.ts";
 
 export type AgentsState = {
@@ -30,7 +31,7 @@ export async function loadAgents(state: AgentsState) {
       }
     }
   } catch (err) {
-    state.agentsError = String(err);
+    state.agentsError = localizeUiError(err);
   } finally {
     state.agentsLoading = false;
   }

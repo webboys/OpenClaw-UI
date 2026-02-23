@@ -85,6 +85,8 @@ export const en: TranslationMap = {
       title: "Gateway Access",
       subtitle: "Where the dashboard connects and how it authenticates.",
       wsUrl: "WebSocket URL",
+      wsUrlHint:
+        "Paste ws://, wss://, or a dashboard http(s) URL. Tokenized links are parsed automatically.",
       token: "Gateway Token",
       password: "Password (not stored)",
       sessionKey: "Default Session Key",
@@ -143,6 +145,7 @@ export const en: TranslationMap = {
       genericMessage: "Verify gateway health and reconnect.",
       troubleshootingDocs: "Gateway troubleshooting docs",
       runLabel: "Run:",
+      rawErrorLabel: "Raw error",
       copyCommands: "Copy commands",
     },
     auth: {
@@ -158,6 +161,44 @@ export const en: TranslationMap = {
       stayHttp: "If you must stay on HTTP, set {config} (token-only).",
       tailscaleDocsLabel: "Tailscale Serve docs",
       httpDocsLabel: "Insecure HTTP docs",
+    },
+    readiness: {
+      title: "First deployment checklist",
+      progress: "{done}/{total} complete",
+      done: "done",
+      pending: "pending",
+      readyMessage: "Dashboard is ready. You can continue in Channels, Chat, or Runtime.",
+      detectedToken: "Token detected in URL and auto-applied on Connect.",
+      detectedSession: "Session detected in URL: {session}",
+      nextCommandLabel: "Next command",
+      copyNextCommand: "Copy command",
+      docsLabel: "Dashboard setup docs",
+      steps: {
+        gateway: {
+          label: "Gateway URL is valid",
+        },
+        auth: {
+          label: "Authentication is ready",
+        },
+        connect: {
+          label: "Dashboard is connected",
+        },
+      },
+      details: {
+        gateway: {
+          valid: "You can paste ws://, wss://, or dashboard http(s) URLs.",
+          invalid: "Paste the URL from openclaw dashboard --no-open.",
+        },
+        auth: {
+          ready: "Token/password input is ready for this browser session.",
+          missing: "Set a token or password before connecting.",
+          notRequired: "This gateway does not require local token/password input.",
+        },
+        connect: {
+          ready: "Live gateway snapshot is available.",
+          pending: "Click Connect after the steps above are complete.",
+        },
+      },
     },
   },
   chat: {

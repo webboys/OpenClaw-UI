@@ -2,6 +2,15 @@ import { html, nothing } from "lit";
 import { t } from "../../i18n/index.ts";
 import { renderInstances, type InstancesProps } from "./instances.ts";
 import { renderSessions, type SessionsProps } from "./sessions.ts";
+import {
+  buttonClass,
+  calloutClass,
+  CARD_CLASS,
+  CARD_SUB_CLASS,
+  CARD_TITLE_CLASS,
+  MONO_TEXT_CLASS,
+  MUTED_TEXT_CLASS,
+} from "./tw.ts";
 
 export type RuntimePanel = "instances" | "sessions";
 
@@ -18,27 +27,27 @@ export type RuntimeProps = {
 
 export function renderRuntime(props: RuntimeProps) {
   return html`
-    <section class="card">
-      <div class="row" style="justify-content: space-between; align-items: flex-end; gap: 12px;">
+    <section class=${CARD_CLASS}>
+      <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <div class="card-title">${t("tabs.runtime")}</div>
-          <div class="card-sub">
-            ${t("tabs.instances")}: <span class="mono">${props.presenceCount}</span>
-            <span class="muted"> / </span>
-            ${t("tabs.sessions")}: <span class="mono">${props.sessionsCount ?? t("common.na")}</span>
+          <div class=${CARD_TITLE_CLASS}>${t("tabs.runtime")}</div>
+          <div class=${CARD_SUB_CLASS}>
+            ${t("tabs.instances")}: <span class=${MONO_TEXT_CLASS}>${props.presenceCount}</span>
+            <span class=${MUTED_TEXT_CLASS}> / </span>
+            ${t("tabs.sessions")}: <span class=${MONO_TEXT_CLASS}>${props.sessionsCount ?? t("common.na")}</span>
           </div>
         </div>
-        <div class="row" style="gap: 8px;">
+        <div class="flex items-center gap-2">
           <button
             data-testid="runtime-panel-instances"
-            class="btn btn--sm ${props.panel === "instances" ? "active" : ""}"
+            class=${buttonClass({ small: true, active: props.panel === "instances" })}
             @click=${() => props.onPanelChange("instances")}
           >
             ${t("tabs.instances")}
           </button>
           <button
             data-testid="runtime-panel-sessions"
-            class="btn btn--sm ${props.panel === "sessions" ? "active" : ""}"
+            class=${buttonClass({ small: true, active: props.panel === "sessions" })}
             @click=${() => props.onPanelChange("sessions")}
           >
             ${t("tabs.sessions")}
@@ -48,10 +57,14 @@ export function renderRuntime(props: RuntimeProps) {
       ${
         props.panel === "instances" && props.presenceCount === 0
           ? html`
-              <div class="callout" style="margin-top: 12px;">
-                <div class="row" style="justify-content: space-between; gap: 8px; align-items: center;">
+              <div class="${calloutClass("default")} mt-3">
+                <div class="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
                   <span>${t("runtime.empty.instances")}</span>
-                  <button data-testid="runtime-open-channels" class="btn btn--sm" @click=${props.onOpenChannels}>
+                  <button
+                    data-testid="runtime-open-channels"
+                    class=${buttonClass({ small: true })}
+                    @click=${props.onOpenChannels}
+                  >
                     ${t("runtime.empty.openChannels")}
                   </button>
                 </div>
@@ -62,10 +75,14 @@ export function renderRuntime(props: RuntimeProps) {
       ${
         props.panel === "sessions" && props.sessionsCount === 0
           ? html`
-              <div class="callout" style="margin-top: 12px;">
-                <div class="row" style="justify-content: space-between; gap: 8px; align-items: center;">
+              <div class="${calloutClass("default")} mt-3">
+                <div class="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
                   <span>${t("runtime.empty.sessions")}</span>
-                  <button data-testid="runtime-open-chat" class="btn btn--sm" @click=${props.onOpenChat}>
+                  <button
+                    data-testid="runtime-open-chat"
+                    class=${buttonClass({ small: true })}
+                    @click=${props.onOpenChat}
+                  >
                     ${t("runtime.empty.openChat")}
                   </button>
                 </div>

@@ -1,4 +1,4 @@
-import { extractQueryTerms } from "../usage-helpers.ts";
+import { canonicalizeQueryKey, extractQueryTerms } from "../usage-helpers.ts";
 import { CostDailyEntry, UsageAggregates, UsageSessionEntry } from "./usageTypes.ts";
 
 function downloadTextFile(filename: string, content: string, type = "text/plain") {
@@ -123,6 +123,47 @@ type QuerySuggestion = {
   value: string;
 };
 
+const QUERY_KEY_LABELS: Record<string, string> = {
+  agent: "智能体",
+  channel: "频道",
+  provider: "服务商",
+  model: "模型",
+  tool: "工具",
+  has: "条件",
+  minTokens: "最小令牌",
+  maxTokens: "最大令牌",
+  minCost: "最小成本",
+  maxCost: "最大成本",
+  minMessages: "最小消息数",
+  maxMessages: "最大消息数",
+};
+
+const QUERY_KEY_TOKENS: Record<string, string> = {
+  agent: "智能体",
+  channel: "频道",
+  provider: "服务商",
+  model: "模型",
+  tool: "工具",
+  has: "条件",
+  minTokens: "最小令牌",
+  maxTokens: "最大令牌",
+  minCost: "最小成本",
+  maxCost: "最大成本",
+  minMessages: "最小消息数",
+  maxMessages: "最大消息数",
+};
+
+const HAS_VALUE_LABELS: Record<string, string> = {
+  errors: "错误",
+  tools: "工具",
+  context: "上下文",
+  usage: "用量",
+  model: "模型",
+  provider: "服务商",
+};
+
+const queryTokenKey = (key: string): string => QUERY_KEY_TOKENS[key] ?? key;
+
 const buildQuerySuggestions = (
   query: string,
   sessions: UsageSessionEntry[],
@@ -138,7 +179,7 @@ const buildQuerySuggestions = (
     ? [lastToken.slice(0, lastToken.indexOf(":")), lastToken.slice(lastToken.indexOf(":") + 1)]
     : ["", ""];
 
-  const key = rawKey.toLowerCase();
+  const key = canonicalizeQueryKey(rawKey);
   const value = rawValue.toLowerCase();
 
   const unique = (items: Array<string | undefined>): string[] => {
@@ -166,23 +207,25 @@ const buildQuerySuggestions = (
 
   if (!key) {
     return [
-      { label: "agent:", value: "agent:" },
-      { label: "channel:", value: "channel:" },
-      { label: "provider:", value: "provider:" },
-      { label: "model:", value: "model:" },
-      { label: "tool:", value: "tool:" },
-      { label: "has:errors", value: "has:errors" },
-      { label: "has:tools", value: "has:tools" },
-      { label: "minTokens:", value: "minTokens:" },
-      { label: "maxCost:", value: "maxCost:" },
+      { label: QUERY_KEY_LABELS.agent, value: `${queryTokenKey("agent")}:` },
+      { label: QUERY_KEY_LABELS.channel, value: `${queryTokenKey("channel")}:` },
+      { label: QUERY_KEY_LABELS.provider, value: `${queryTokenKey("provider")}:` },
+      { label: QUERY_KEY_LABELS.model, value: `${queryTokenKey("model")}:` },
+      { label: QUERY_KEY_LABELS.tool, value: `${queryTokenKey("tool")}:` },
+      { label: `${QUERY_KEY_LABELS.has}：${HAS_VALUE_LABELS.errors}`, value: "条件:错误" },
+      { label: `${QUERY_KEY_LABELS.has}：${HAS_VALUE_LABELS.tools}`, value: "条件:工具" },
+      { label: QUERY_KEY_LABELS.minTokens, value: `${queryTokenKey("minTokens")}:` },
+      { label: QUERY_KEY_LABELS.maxCost, value: `${queryTokenKey("maxCost")}:` },
     ];
   }
 
   const suggestions: QuerySuggestion[] = [];
   const addValues = (prefix: string, values: string[]) => {
+    const zhKey = QUERY_KEY_LABELS[prefix] ?? prefix;
+    const tokenKey = queryTokenKey(prefix);
     for (const val of values) {
       if (!value || val.toLowerCase().includes(value)) {
-        suggestions.push({ label: `${prefix}:${val}`, value: `${prefix}:${val}` });
+        suggestions.push({ label: `${zhKey}：${val}`, value: `${tokenKey}:${val}` });
       }
     }
   };
@@ -205,8 +248,12 @@ const buildQuerySuggestions = (
       break;
     case "has":
       ["errors", "tools", "context", "usage", "model", "provider"].forEach((entry) => {
-        if (!value || entry.includes(value)) {
-          suggestions.push({ label: `has:${entry}`, value: `has:${entry}` });
+        const label = HAS_VALUE_LABELS[entry] ?? entry;
+        if (!value || entry.includes(value) || label.includes(value)) {
+          suggestions.push({
+            label: `条件：${label}`,
+            value: `条件:${label}`,
+          });
         }
       });
       break;
@@ -255,9 +302,9 @@ const removeQueryToken = (query: string, token: string): string => {
 };
 
 const setQueryTokensForKey = (query: string, key: string, values: string[]): string => {
-  const normalizedKey = normalizeQueryText(key);
+  const normalizedKey = canonicalizeQueryKey(key);
   const tokens = extractQueryTerms(query)
-    .filter((term) => normalizeQueryText(term.key ?? "") !== normalizedKey)
+    .filter((term) => canonicalizeQueryKey(term.key) !== normalizedKey)
     .map((term) => term.raw);
   const next = [...tokens, ...values.map((value) => `${key}:${value}`)];
   return next.length ? `${next.join(" ")} ` : "";

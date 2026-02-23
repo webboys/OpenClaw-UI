@@ -53,12 +53,7 @@ import {
   updateSkillEnabled,
 } from "./controllers/skills.ts";
 import { icons } from "./icons.ts";
-import {
-  normalizeBasePath,
-  subtitleForTab,
-  titleForTab,
-  visibleTabGroups,
-} from "./navigation.ts";
+import { normalizeBasePath, subtitleForTab, titleForTab, visibleTabGroups } from "./navigation.ts";
 import { renderAgents } from "./views/agents.ts";
 import { renderChannels } from "./views/channels.ts";
 import { renderChat } from "./views/chat.ts";
@@ -77,6 +72,8 @@ import { renderSkills } from "./views/skills.ts";
 
 const AVATAR_DATA_RE = /^data:/i;
 const AVATAR_HTTP_RE = /^https?:\/\//i;
+const AVATAR_RELATIVE_RE = /^(?:\/|\.{1,2}\/|avatar\/)/i;
+const AVATAR_FILE_RE = /\.(?:png|jpe?g|gif|webp|svg|ico)(?:$|[?#])/i;
 
 function resolveAssistantAvatarUrl(state: AppViewState): string | undefined {
   const list = state.agentsList?.agents ?? [];
@@ -88,24 +85,78 @@ function resolveAssistantAvatarUrl(state: AppViewState): string | undefined {
   if (!candidate) {
     return undefined;
   }
-  if (AVATAR_DATA_RE.test(candidate) || AVATAR_HTTP_RE.test(candidate)) {
+  if (
+    AVATAR_DATA_RE.test(candidate) ||
+    AVATAR_HTTP_RE.test(candidate) ||
+    AVATAR_RELATIVE_RE.test(candidate) ||
+    AVATAR_FILE_RE.test(candidate)
+  ) {
     return candidate;
   }
   return identity?.avatarUrl;
+}
+
+function formatStatusError(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+  const lower = value.toLowerCase();
+  if (lower.includes("origin not allowed") || lower.includes("allowedorigins")) {
+    return t("overview.fix.originMessage");
+  }
+  if (lower.includes("auth") || lower.includes("token")) {
+    return t("overview.fix.authMessage");
+  }
+  if (lower.includes("secure context") || lower.includes("device identity required")) {
+    return t("overview.fix.secureMessage");
+  }
+  if (lower.includes("pair") || lower.includes("approval")) {
+    return t("overview.fix.pairingMessage");
+  }
+  return t("overview.fix.genericMessage");
 }
 
 export function renderApp(state: AppViewState) {
   const presenceCount = state.presenceEntries.length;
   const sessionsCount = state.sessionsResult?.count ?? null;
   const cronNext = state.cronStatus?.nextWakeAtMs ?? null;
+  const statusError = formatStatusError(state.lastError);
   const chatDisabledReason = state.connected ? null : t("chat.disconnected");
   const isChat = state.tab === "chat";
   const chatFocus = isChat && (state.settings.chatFocusMode || state.onboarding);
   const showThinking = state.onboarding ? false : state.settings.chatShowThinking;
   const assistantAvatarUrl = resolveAssistantAvatarUrl(state);
-  const chatAvatarUrl = state.chatAvatarUrl ?? assistantAvatarUrl ?? null;
+  const chatAvatarUrl = assistantAvatarUrl ?? state.chatAvatarUrl ?? null;
+  const adaptiveFocus =
+    (state.tab === "chat" && Boolean(state.chatStream || state.chatRunId || state.chatSending)) ||
+    (state.tab === "logs" && state.logsAutoFollow && state.logsEntries.length > 80);
   const configValue =
     state.configForm ?? (state.configSnapshot?.config as Record<string, unknown> | null);
+  const resolveAgentListIndex = (agentId: string, createMissing = false): number => {
+    if (!configValue) {
+      return -1;
+    }
+    const list = (configValue as { agents?: { list?: unknown[] } }).agents?.list;
+    const matchesAgent = (entry: unknown) =>
+      entry &&
+      typeof entry === "object" &&
+      "id" in entry &&
+      (entry as { id?: string }).id === agentId;
+    if (Array.isArray(list)) {
+      const index = list.findIndex(matchesAgent);
+      if (index >= 0 || !createMissing) {
+        return index;
+      }
+      const nextList = [...list, { id: agentId }];
+      updateConfigFormValue(state, ["agents", "list"], nextList);
+      return nextList.length - 1;
+    }
+    if (!createMissing) {
+      return -1;
+    }
+    updateConfigFormValue(state, ["agents", "list"], [{ id: agentId }]);
+    return 0;
+  };
   const basePath = normalizeBasePath(state.basePath ?? "");
   const beginnerMode = state.settings.navBeginnerMode !== false;
   const tabGroups = visibleTabGroups({
@@ -145,12 +196,13 @@ export function renderApp(state: AppViewState) {
       state.sessionsIncludeUnknown = next.includeUnknown;
     },
     onRefresh: () => loadSessions(state),
-    onPatch: (key: string, patch: Parameters<typeof patchSession>[2]) => patchSession(state, key, patch),
+    onPatch: (key: string, patch: Parameters<typeof patchSession>[2]) =>
+      patchSession(state, key, patch),
     onDelete: (key: string) => deleteSessionAndRefresh(state, key),
   };
 
   return html`
-    <div class="shell ${isChat ? "shell--chat" : ""} ${chatFocus ? "shell--chat-focus" : ""} ${state.settings.navCollapsed ? "shell--nav-collapsed" : ""} ${state.onboarding ? "shell--onboarding" : ""}">
+    <div class="shell ${isChat ? "shell--chat" : ""} ${chatFocus ? "shell--chat-focus" : ""} ${state.settings.navCollapsed ? "shell--nav-collapsed" : ""} ${state.onboarding ? "shell--onboarding" : ""} ${adaptiveFocus ? "shell--adaptive-focus" : ""}">
       <header class="topbar">
         <div class="topbar-left">
           <button
@@ -167,7 +219,7 @@ export function renderApp(state: AppViewState) {
           </button>
           <div class="brand">
             <div class="brand-logo">
-              <img src=${basePath ? `${basePath}/favicon.svg` : "/favicon.svg"} alt="OpenClaw" />
+              <span class="brand-logo__icon" aria-hidden="true">${icons.assistantBadge}</span>
             </div>
             <div class="brand-text">
               <div class="brand-title">OPENCLAW</div>
@@ -187,7 +239,8 @@ export function renderApp(state: AppViewState) {
       <aside class="nav ${state.settings.navCollapsed ? "nav--collapsed" : ""}">
         ${tabGroups.map((group) => {
           const defaultCollapsed = group.label === "advanced";
-          const isGroupCollapsed = state.settings.navGroupsCollapsed[group.label] ?? defaultCollapsed;
+          const isGroupCollapsed =
+            state.settings.navGroupsCollapsed[group.label] ?? defaultCollapsed;
           const hasActiveTab = group.tabs.some((tab) => tab === state.tab);
           const isCollapsed = isGroupCollapsed && !hasActiveTab;
           return html`
@@ -269,7 +322,8 @@ export function renderApp(state: AppViewState) {
             ${state.tab === "usage" ? nothing : html`<div class="page-sub">${subtitleForTab(state.tab)}</div>`}
           </div>
           <div class="page-meta">
-            ${state.lastError ? html`<div class="pill danger">${state.lastError}</div>` : nothing}
+            ${adaptiveFocus ? html`<div class="pill shell-focus-pill">AI 专注中</div>` : nothing}
+            ${statusError ? html`<div class="pill danger">${statusError}</div>` : nothing}
             ${isChat ? renderChatControls(state) : nothing}
           </div>
         </section>
@@ -370,17 +424,9 @@ export function renderApp(state: AppViewState) {
             : nothing
         }
 
-        ${
-          state.tab === "instances"
-            ? renderInstances(instancesTabProps)
-            : nothing
-        }
+        ${state.tab === "instances" ? renderInstances(instancesTabProps) : nothing}
 
-        ${
-          state.tab === "sessions"
-            ? renderSessions(sessionsTabProps)
-            : nothing
-        }
+        ${state.tab === "sessions" ? renderSessions(sessionsTabProps) : nothing}
 
         ${renderUsageTab(state)}
 
@@ -738,6 +784,51 @@ export function renderApp(state: AppViewState) {
                     ? { primary, fallbacks: normalized }
                     : { fallbacks: normalized };
                   updateConfigFormValue(state, basePath, next);
+                },
+                onIdentityNameChange: (agentId, name) => {
+                  const index = resolveAgentListIndex(agentId, true);
+                  if (index < 0) {
+                    return;
+                  }
+                  const trimmed = name.trim();
+                  const path = ["agents", "list", index, "identity", "name"] as Array<
+                    string | number
+                  >;
+                  if (!trimmed) {
+                    removeConfigFormValue(state, path);
+                    return;
+                  }
+                  updateConfigFormValue(state, path, trimmed);
+                },
+                onIdentityEmojiChange: (agentId, emoji) => {
+                  const index = resolveAgentListIndex(agentId, true);
+                  if (index < 0) {
+                    return;
+                  }
+                  const trimmed = emoji.trim();
+                  const path = ["agents", "list", index, "identity", "emoji"] as Array<
+                    string | number
+                  >;
+                  if (!trimmed) {
+                    removeConfigFormValue(state, path);
+                    return;
+                  }
+                  updateConfigFormValue(state, path, trimmed);
+                },
+                onIdentityAvatarChange: (agentId, avatar) => {
+                  const index = resolveAgentListIndex(agentId, true);
+                  if (index < 0) {
+                    return;
+                  }
+                  const trimmed = typeof avatar === "string" ? avatar.trim() : "";
+                  const path = ["agents", "list", index, "identity", "avatar"] as Array<
+                    string | number
+                  >;
+                  if (!trimmed) {
+                    removeConfigFormValue(state, path);
+                    return;
+                  }
+                  updateConfigFormValue(state, path, trimmed);
                 },
               })
             : nothing

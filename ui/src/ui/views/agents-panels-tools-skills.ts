@@ -16,6 +16,18 @@ import {
   computeSkillReasons,
   renderSkillStatusChips,
 } from "./skills-shared.ts";
+import {
+  buttonClass,
+  calloutClass,
+  CARD_CLASS,
+  CARD_SUB_CLASS,
+  CARD_TITLE_CLASS,
+  FIELD_CLASS,
+  FIELD_LABEL_CLASS,
+  INPUT_CLASS,
+  MONO_TEXT_CLASS,
+  MUTED_TEXT_CLASS,
+} from "./tw.ts";
 
 export function renderAgentTools(params: {
   agentId: string;
@@ -33,9 +45,9 @@ export function renderAgentTools(params: {
   const globalTools = config.globalTools ?? {};
   const profile = agentTools.profile ?? globalTools.profile ?? "full";
   const profileSource = agentTools.profile
-    ? "agent override"
+    ? "agent"
     : globalTools.profile
-      ? "global default"
+      ? "global"
       : "default";
   const hasAgentAllow = Array.isArray(agentTools.allow) && agentTools.allow.length > 0;
   const hasGlobalAllow = Array.isArray(globalTools.allow) && globalTools.allow.length > 0;
@@ -110,31 +122,31 @@ export function renderAgentTools(params: {
   };
 
   return html`
-    <section class="card">
-      <div class="row" style="justify-content: space-between;">
+    <section class=${CARD_CLASS}>
+      <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div class="card-title">Tool Access</div>
-          <div class="card-sub">
-            Profile + per-tool overrides for this agent.
-            <span class="mono">${enabledCount}/${toolIds.length}</span> enabled.
+          <div class=${CARD_TITLE_CLASS}>工具权限</div>
+          <div class=${CARD_SUB_CLASS}>
+            基础策略 + 单工具覆盖。
+            <span class=${MONO_TEXT_CLASS}>${enabledCount}/${toolIds.length}</span> 已启用。
           </div>
         </div>
-        <div class="row" style="gap: 8px;">
-          <button class="btn btn--sm" ?disabled=${!editable} @click=${() => updateAll(true)}>
-            Enable All
+        <div class="flex flex-wrap gap-2">
+          <button class=${buttonClass({ small: true })} ?disabled=${!editable} @click=${() => updateAll(true)}>
+            全部启用
           </button>
-          <button class="btn btn--sm" ?disabled=${!editable} @click=${() => updateAll(false)}>
-            Disable All
+          <button class=${buttonClass({ small: true })} ?disabled=${!editable} @click=${() => updateAll(false)}>
+            全部禁用
           </button>
-          <button class="btn btn--sm" ?disabled=${params.configLoading} @click=${params.onConfigReload}>
-            Reload Config
+          <button class=${buttonClass({ small: true })} ?disabled=${params.configLoading} @click=${params.onConfigReload}>
+            重载配置
           </button>
           <button
-            class="btn btn--sm primary"
+            class=${buttonClass({ small: true, tone: "primary" })}
             ?disabled=${params.configSaving || !params.configDirty}
             @click=${params.onConfigSave}
           >
-            ${params.configSaving ? "Saving…" : "Save"}
+            ${params.configSaving ? "保存中…" : "保存"}
           </button>
         </div>
       </div>
@@ -142,8 +154,8 @@ export function renderAgentTools(params: {
       ${
         !params.configForm
           ? html`
-              <div class="callout info" style="margin-top: 12px">
-                Load the gateway config to adjust tool profiles.
+              <div class="${calloutClass("default")} mt-3">
+                请先加载网关配置，再调整工具权限策略。
               </div>
             `
           : nothing
@@ -151,8 +163,8 @@ export function renderAgentTools(params: {
       ${
         hasAgentAllow
           ? html`
-              <div class="callout info" style="margin-top: 12px">
-                This agent is using an explicit allowlist in config. Tool overrides are managed in the Config tab.
+              <div class="${calloutClass("warn")} mt-3">
+                当前智能体使用显式 allowlist。请在配置页直接维护工具名单。
               </div>
             `
           : nothing
@@ -160,41 +172,47 @@ export function renderAgentTools(params: {
       ${
         hasGlobalAllow
           ? html`
-              <div class="callout info" style="margin-top: 12px">
-                Global tools.allow is set. Agent overrides cannot enable tools that are globally blocked.
+              <div class="${calloutClass("warn")} mt-3">
+                全局 tools.allow 已启用。智能体无法覆盖全局禁用项。
               </div>
             `
           : nothing
       }
 
-      <div class="agent-tools-meta" style="margin-top: 16px;">
+      <div class="agent-tools-meta mt-4">
         <div class="agent-kv">
-          <div class="label">Profile</div>
-          <div class="mono">${profile}</div>
+          <div class=${FIELD_LABEL_CLASS}>策略档位</div>
+          <div class=${MONO_TEXT_CLASS}>${profile}</div>
         </div>
         <div class="agent-kv">
-          <div class="label">Source</div>
-          <div>${profileSource}</div>
+          <div class=${FIELD_LABEL_CLASS}>来源</div>
+          <div>${
+            profileSource === "agent"
+              ? "智能体覆盖"
+              : profileSource === "global"
+                ? "全局默认"
+                : "内置默认"
+          }</div>
         </div>
         ${
           params.configDirty
             ? html`
                 <div class="agent-kv">
-                  <div class="label">Status</div>
-                  <div class="mono">unsaved</div>
+                  <div class=${FIELD_LABEL_CLASS}>状态</div>
+                  <div class=${MONO_TEXT_CLASS}>未保存</div>
                 </div>
               `
             : nothing
         }
       </div>
 
-      <div class="agent-tools-presets" style="margin-top: 16px;">
-        <div class="label">Quick Presets</div>
+      <div class="agent-tools-presets mt-4">
+        <div class=${FIELD_LABEL_CLASS}>快速预设</div>
         <div class="agent-tools-buttons">
           ${PROFILE_OPTIONS.map(
             (option) => html`
               <button
-                class="btn btn--sm ${profile === option.id ? "active" : ""}"
+                class=${buttonClass({ small: true, active: profile === option.id })}
                 ?disabled=${!editable}
                 @click=${() => params.onProfileChange(params.agentId, option.id, true)}
               >
@@ -203,16 +221,16 @@ export function renderAgentTools(params: {
             `,
           )}
           <button
-            class="btn btn--sm"
+            class=${buttonClass({ small: true })}
             ?disabled=${!editable}
             @click=${() => params.onProfileChange(params.agentId, null, false)}
           >
-            Inherit
+            继承默认
           </button>
         </div>
       </div>
 
-      <div class="agent-tools-grid" style="margin-top: 20px;">
+      <div class="agent-tools-grid mt-5">
         ${TOOL_SECTIONS.map(
           (section) =>
             html`
@@ -288,42 +306,42 @@ export function renderAgentSkills(params: {
   const totalCount = rawSkills.length;
 
   return html`
-    <section class="card">
-      <div class="row" style="justify-content: space-between;">
+    <section class=${CARD_CLASS}>
+      <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div class="card-title">Agent Skills</div>
-          <div class="card-sub">
-            Per-agent skill allowlist and workspace skills.
+          <div class=${CARD_TITLE_CLASS}>智能体技能</div>
+          <div class=${CARD_SUB_CLASS}>
+            单智能体技能白名单与工作区技能。
             ${
               totalCount > 0
-                ? html`<span class="mono">${enabledCount}/${totalCount}</span>`
+                ? html`<span class=${MONO_TEXT_CLASS}>${enabledCount}/${totalCount}</span>`
                 : nothing
             }
           </div>
         </div>
-        <div class="row" style="gap: 8px;">
-          <button class="btn btn--sm" ?disabled=${!editable} @click=${() => params.onClear(params.agentId)}>
-            Use All
+        <div class="flex flex-wrap gap-2">
+          <button class=${buttonClass({ small: true })} ?disabled=${!editable} @click=${() => params.onClear(params.agentId)}>
+            使用全部
           </button>
           <button
-            class="btn btn--sm"
+            class=${buttonClass({ small: true })}
             ?disabled=${!editable}
             @click=${() => params.onDisableAll(params.agentId)}
           >
-            Disable All
+            全部禁用
           </button>
-          <button class="btn btn--sm" ?disabled=${params.configLoading} @click=${params.onConfigReload}>
-            Reload Config
+          <button class=${buttonClass({ small: true })} ?disabled=${params.configLoading} @click=${params.onConfigReload}>
+            重载配置
           </button>
-          <button class="btn btn--sm" ?disabled=${params.loading} @click=${params.onRefresh}>
-            ${params.loading ? "Loading…" : "Refresh"}
+          <button class=${buttonClass({ small: true })} ?disabled=${params.loading} @click=${params.onRefresh}>
+            ${params.loading ? "加载中…" : "刷新"}
           </button>
           <button
-            class="btn btn--sm primary"
+            class=${buttonClass({ small: true, tone: "primary" })}
             ?disabled=${params.configSaving || !params.configDirty}
             @click=${params.onConfigSave}
           >
-            ${params.configSaving ? "Saving…" : "Save"}
+            ${params.configSaving ? "保存中…" : "保存"}
           </button>
         </div>
       </div>
@@ -331,8 +349,8 @@ export function renderAgentSkills(params: {
       ${
         !params.configForm
           ? html`
-              <div class="callout info" style="margin-top: 12px">
-                Load the gateway config to set per-agent skills.
+              <div class="${calloutClass("default")} mt-3">
+                请先加载网关配置，再设置智能体技能策略。
               </div>
             `
           : nothing
@@ -340,48 +358,49 @@ export function renderAgentSkills(params: {
       ${
         usingAllowlist
           ? html`
-              <div class="callout info" style="margin-top: 12px">This agent uses a custom skill allowlist.</div>
+              <div class="${calloutClass("default")} mt-3">当前智能体启用了自定义技能白名单。</div>
             `
           : html`
-              <div class="callout info" style="margin-top: 12px">
-                All skills are enabled. Disabling any skill will create a per-agent allowlist.
+              <div class="${calloutClass("default")} mt-3">
+                当前默认启用全部技能。禁用任一技能后将创建智能体级白名单。
               </div>
             `
       }
       ${
         !reportReady && !params.loading
           ? html`
-              <div class="callout info" style="margin-top: 12px">
-                Load skills for this agent to view workspace-specific entries.
+              <div class="${calloutClass("default")} mt-3">
+                请先刷新该智能体技能列表，再查看工作区专属技能项。
               </div>
             `
           : nothing
       }
       ${
         params.error
-          ? html`<div class="callout danger" style="margin-top: 12px;">${params.error}</div>`
+          ? html`<div class="${calloutClass("danger")} mt-3">${params.error}</div>`
           : nothing
       }
 
-      <div class="filters" style="margin-top: 14px;">
-        <label class="field" style="flex: 1;">
-          <span>Filter</span>
+      <div class="filters mt-3.5">
+        <label class="${FIELD_CLASS} flex-1">
+          <span class=${FIELD_LABEL_CLASS}>筛选</span>
           <input
+            class=${INPUT_CLASS}
             .value=${params.filter}
             @input=${(e: Event) => params.onFilterChange((e.target as HTMLInputElement).value)}
-            placeholder="Search agent skills"
+            placeholder="搜索智能体技能"
           />
         </label>
-        <div class="muted">${filtered.length} shown</div>
+        <div class=${MUTED_TEXT_CLASS}>显示 ${filtered.length} 条</div>
       </div>
 
       ${
         filtered.length === 0
           ? html`
-              <div class="muted" style="margin-top: 16px">No skills found.</div>
+              <div class="${MUTED_TEXT_CLASS} mt-4">未找到匹配技能。</div>
             `
           : html`
-              <div class="agent-skills-groups" style="margin-top: 16px;">
+              <div class="agent-skills-groups mt-4">
                 ${groups.map((group) =>
                   renderAgentSkillGroup(group, {
                     agentId: params.agentId,
@@ -413,7 +432,7 @@ function renderAgentSkillGroup(
     <details class="agent-skills-group" ?open=${!collapsedByDefault}>
       <summary class="agent-skills-header">
         <span>${group.label}</span>
-        <span class="muted">${group.skills.length}</span>
+        <span class=${MUTED_TEXT_CLASS}>${group.skills.length}</span>
       </summary>
       <div class="list skills-grid">
         ${group.skills.map((skill) =>
@@ -451,12 +470,12 @@ function renderAgentSkillRow(
         ${renderSkillStatusChips({ skill })}
         ${
           missing.length > 0
-            ? html`<div class="muted" style="margin-top: 6px;">Missing: ${missing.join(", ")}</div>`
+            ? html`<div class="${MUTED_TEXT_CLASS} mt-1.5">缺失项：${missing.join(", ")}</div>`
             : nothing
         }
         ${
           reasons.length > 0
-            ? html`<div class="muted" style="margin-top: 6px;">Reason: ${reasons.join(", ")}</div>`
+            ? html`<div class="${MUTED_TEXT_CLASS} mt-1.5">原因：${reasons.join(", ")}</div>`
             : nothing
         }
       </div>

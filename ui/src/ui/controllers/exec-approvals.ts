@@ -1,4 +1,5 @@
 import type { GatewayBrowserClient } from "../gateway.ts";
+import { localizeUiError, localizeUiText } from "../error-localization.ts";
 import { cloneConfigObject, removePathValue, setPathValue } from "./config/form-utils.ts";
 
 export type ExecApprovalsDefaults = {
@@ -91,13 +92,13 @@ export async function loadExecApprovals(
   try {
     const rpc = resolveExecApprovalsRpc(target);
     if (!rpc) {
-      state.lastError = "Select a node before loading exec approvals.";
+      state.lastError = localizeUiText("请先选择节点，再加载执行审批。");
       return;
     }
     const res = await state.client.request<ExecApprovalsSnapshot>(rpc.method, rpc.params);
     applyExecApprovalsSnapshot(state, res);
   } catch (err) {
-    state.lastError = String(err);
+    state.lastError = localizeUiError(err);
   } finally {
     state.execApprovalsLoading = false;
   }
@@ -125,20 +126,20 @@ export async function saveExecApprovals(
   try {
     const baseHash = state.execApprovalsSnapshot?.hash;
     if (!baseHash) {
-      state.lastError = "Exec approvals hash missing; reload and retry.";
+      state.lastError = localizeUiText("执行审批哈希缺失，请刷新后重试。");
       return;
     }
     const file = state.execApprovalsForm ?? state.execApprovalsSnapshot?.file ?? {};
     const rpc = resolveExecApprovalsSaveRpc(target, { file, baseHash });
     if (!rpc) {
-      state.lastError = "Select a node before saving exec approvals.";
+      state.lastError = localizeUiText("请先选择节点，再保存执行审批。");
       return;
     }
     await state.client.request(rpc.method, rpc.params);
     state.execApprovalsDirty = false;
     await loadExecApprovals(state, target);
   } catch (err) {
-    state.lastError = String(err);
+    state.lastError = localizeUiError(err);
   } finally {
     state.execApprovalsSaving = false;
   }

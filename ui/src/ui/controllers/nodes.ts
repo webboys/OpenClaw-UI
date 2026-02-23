@@ -1,4 +1,5 @@
 import type { GatewayBrowserClient } from "../gateway.ts";
+import { localizeUiError } from "../error-localization.ts";
 
 export type NodesState = {
   client: GatewayBrowserClient | null;
@@ -24,7 +25,7 @@ export async function loadNodes(state: NodesState, opts?: { quiet?: boolean }) {
     state.nodes = Array.isArray(res.nodes) ? res.nodes : [];
   } catch (err) {
     if (!opts?.quiet) {
-      state.lastError = String(err);
+      state.lastError = localizeUiError(err);
     }
   } finally {
     state.nodesLoading = false;

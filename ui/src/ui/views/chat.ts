@@ -13,6 +13,14 @@ import type { SessionsListResult } from "../types.ts";
 import type { ChatItem, MessageGroup } from "../types/chat-types.ts";
 import type { ChatAttachment, ChatQueueItem } from "../ui-types.ts";
 import { renderMarkdownSidebar } from "./markdown-sidebar.ts";
+import {
+  buttonClass,
+  calloutClass,
+  CARD_CLASS,
+  FIELD_CLASS,
+  FIELD_LABEL_CLASS,
+  TEXTAREA_CLASS,
+} from "./tw.ts";
 import "../components/resizable-divider.ts";
 
 export type CompactionIndicatorStatus = {
@@ -87,7 +95,7 @@ function renderCompactionIndicator(status: CompactionIndicatorStatus | null | un
   if (status.active) {
     return html`
       <div class="compaction-indicator compaction-indicator--active" role="status" aria-live="polite">
-        ${icons.loader} Compacting context...
+        ${icons.loader} 正在压缩上下文...
       </div>
     `;
   }
@@ -98,7 +106,7 @@ function renderCompactionIndicator(status: CompactionIndicatorStatus | null | un
     if (elapsed < COMPACTION_TOAST_DURATION_MS) {
       return html`
         <div class="compaction-indicator compaction-indicator--complete" role="status" aria-live="polite">
-          ${icons.check} Context compacted
+          ${icons.check} 上下文压缩完成
         </div>
       `;
     }
@@ -165,13 +173,13 @@ function renderAttachmentPreview(props: ChatProps) {
           <div class="chat-attachment">
             <img
               src=${att.dataUrl}
-              alt="Attachment preview"
+              alt="附件预览"
               class="chat-attachment__img"
             />
             <button
               class="chat-attachment__remove"
               type="button"
-              aria-label="Remove attachment"
+              aria-label="移除附件"
               @click=${() => {
                 const next = (props.attachments ?? []).filter((a) => a.id !== att.id);
                 props.onAttachmentsChange?.(next);
@@ -193,17 +201,18 @@ export function renderChat(props: ChatProps) {
   const activeSession = props.sessions?.sessions?.find((row) => row.key === props.sessionKey);
   const reasoningLevel = activeSession?.reasoningLevel ?? "off";
   const showReasoning = props.showThinking && reasoningLevel !== "off";
+  const resolvedAssistantAvatar = props.assistantAvatarUrl ?? props.assistantAvatar ?? null;
   const assistantIdentity = {
     name: props.assistantName,
-    avatar: props.assistantAvatar ?? props.assistantAvatarUrl ?? null,
+    avatar: resolvedAssistantAvatar,
   };
 
   const hasAttachments = (props.attachments?.length ?? 0) > 0;
   const composePlaceholder = props.connected
     ? hasAttachments
-      ? "Add a message or paste more images..."
-      : "Message (↩ to send, Shift+↩ for line breaks, paste images)"
-    : "Connect to the gateway to start chatting…";
+      ? "继续输入消息，或粘贴更多图片..."
+      : "输入消息（回车发送，组合键换行，可直接粘贴图片）"
+    : "请先连接网关后开始对话…";
 
   const splitRatio = props.splitRatio ?? 0.6;
   const sidebarOpen = Boolean(props.sidebarOpen && props.onCloseSidebar);
@@ -217,7 +226,7 @@ export function renderChat(props: ChatProps) {
       ${
         props.loading
           ? html`
-              <div class="muted">Loading chat…</div>
+              <div class="muted">聊天记录加载中…</div>
             `
           : nothing
       }
@@ -264,10 +273,14 @@ export function renderChat(props: ChatProps) {
   `;
 
   return html`
-    <section class="card chat">
-      ${props.disabledReason ? html`<div class="callout">${props.disabledReason}</div>` : nothing}
+    <section class="card chat ${CARD_CLASS}">
+      ${
+        props.disabledReason
+          ? html`<div class=${calloutClass("default")}>${props.disabledReason}</div>`
+          : nothing
+      }
 
-      ${props.error ? html`<div class="callout danger">${props.error}</div>` : nothing}
+      ${props.error ? html`<div class=${calloutClass("danger")}>${props.error}</div>` : nothing}
 
       ${
         props.focusMode
@@ -276,8 +289,8 @@ export function renderChat(props: ChatProps) {
               class="chat-focus-exit"
               type="button"
               @click=${props.onToggleFocusMode}
-              aria-label="Exit focus mode"
-              title="Exit focus mode"
+              aria-label="退出专注模式"
+              title="退出专注模式"
             >
               ${icons.x}
             </button>
@@ -324,7 +337,7 @@ export function renderChat(props: ChatProps) {
         props.queue.length
           ? html`
             <div class="chat-queue" role="status" aria-live="polite">
-              <div class="chat-queue__title">Queued (${props.queue.length})</div>
+              <div class="chat-queue__title">排队中（${props.queue.length}）</div>
               <div class="chat-queue__list">
                 ${props.queue.map(
                   (item) => html`
@@ -332,13 +345,13 @@ export function renderChat(props: ChatProps) {
                       <div class="chat-queue__text">
                         ${
                           item.text ||
-                          (item.attachments?.length ? `Image (${item.attachments.length})` : "")
+                          (item.attachments?.length ? `图片（${item.attachments.length}）` : "")
                         }
                       </div>
                       <button
                         class="btn chat-queue__remove"
                         type="button"
-                        aria-label="Remove queued message"
+                        aria-label="移除排队消息"
                         @click=${() => props.onQueueRemove(item.id)}
                       >
                         ${icons.x}
@@ -358,11 +371,11 @@ export function renderChat(props: ChatProps) {
         props.showNewMessages
           ? html`
             <button
-              class="btn chat-new-messages"
+              class="${buttonClass()} chat-new-messages"
               type="button"
               @click=${props.onScrollToBottom}
             >
-              New messages ${icons.arrowDown}
+              有新消息 ${icons.arrowDown}
             </button>
           `
           : nothing
@@ -371,9 +384,12 @@ export function renderChat(props: ChatProps) {
       <div class="chat-compose">
         ${renderAttachmentPreview(props)}
         <div class="chat-compose__row">
-          <label class="field chat-compose__field">
-            <span>Message</span>
+          <label
+            class="${FIELD_CLASS} chat-compose__field ${props.connected ? "chat-compose__field--live" : ""}"
+          >
+            <span class=${FIELD_LABEL_CLASS}>消息</span>
             <textarea
+              class=${TEXTAREA_CLASS}
               ${ref((el) => el && adjustTextareaHeight(el as HTMLTextAreaElement))}
               .value=${props.draft}
               dir=${detectTextDirection(props.draft)}
@@ -407,18 +423,18 @@ export function renderChat(props: ChatProps) {
           </label>
           <div class="chat-compose__actions">
             <button
-              class="btn"
+              class=${buttonClass()}
               ?disabled=${!props.connected || (!canAbort && props.sending)}
               @click=${canAbort ? props.onAbort : props.onNewSession}
             >
-              ${canAbort ? "Stop" : "New session"}
+              ${canAbort ? "停止" : "新会话"}
             </button>
             <button
-              class="btn primary"
+              class=${buttonClass({ tone: "primary" })}
               ?disabled=${!props.connected}
               @click=${props.onSend}
             >
-              ${isBusy ? "Queue" : "Send"}<kbd class="btn-kbd">↵</kbd>
+              ${isBusy ? "排队发送" : "发送"}<kbd class="btn-kbd">↵</kbd>
             </button>
           </div>
         </div>
@@ -481,7 +497,7 @@ function buildChatItems(props: ChatProps): Array<ChatItem | MessageGroup> {
       key: "chat:history:notice",
       message: {
         role: "system",
-        content: `Showing last ${CHAT_HISTORY_RENDER_LIMIT} messages (${historyStart} hidden).`,
+        content: `仅显示最近 ${CHAT_HISTORY_RENDER_LIMIT} 条消息（已隐藏 ${historyStart} 条）。`,
         timestamp: Date.now(),
       },
     });
@@ -498,7 +514,7 @@ function buildChatItems(props: ChatProps): Array<ChatItem | MessageGroup> {
           typeof marker.id === "string"
             ? `divider:compaction:${marker.id}`
             : `divider:compaction:${normalized.timestamp}:${i}`,
-        label: "Compaction",
+        label: "上下文压缩",
         timestamp: normalized.timestamp ?? Date.now(),
       });
       continue;

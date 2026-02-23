@@ -8,6 +8,26 @@ import type {
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "../controllers/exec-approvals.ts";
 import { formatRelativeTimestamp, formatList } from "../format.ts";
 import { renderExecApprovals, resolveExecApprovalsState } from "./nodes-exec-approvals.ts";
+import {
+  buttonClass,
+  calloutClass,
+  CARD_CLASS,
+  CARD_SUB_CLASS,
+  CARD_TITLE_CLASS,
+  CHIP_CLASS,
+  CHIP_ROW_CLASS,
+  FIELD_CLASS,
+  FIELD_LABEL_CLASS,
+  LIST_CLASS,
+  LIST_ITEM_CLASS,
+  LIST_MAIN_CLASS,
+  LIST_META_CLASS,
+  LIST_SUB_CLASS,
+  LIST_TITLE_CLASS,
+  MONO_TEXT_CLASS,
+  MUTED_TEXT_CLASS,
+  SELECT_CLASS,
+} from "./tw.ts";
 export type NodesProps = {
   loading: boolean;
   nodes: Array<Record<string, unknown>>;
@@ -52,21 +72,21 @@ export function renderNodes(props: NodesProps) {
     ${renderExecApprovals(approvalsState)}
     ${renderBindings(bindingState)}
     ${renderDevices(props)}
-    <section class="card">
-      <div class="row" style="justify-content: space-between;">
+    <section class=${CARD_CLASS}>
+      <div class="flex items-start justify-between gap-3">
         <div>
-          <div class="card-title">Nodes</div>
-          <div class="card-sub">Paired devices and live links.</div>
+          <div class=${CARD_TITLE_CLASS}>在线设备</div>
+          <div class=${CARD_SUB_CLASS}>查看已配对设备与在线连接状态。</div>
         </div>
-        <button class="btn" ?disabled=${props.loading} @click=${props.onRefresh}>
-          ${props.loading ? "Loading…" : "Refresh"}
+        <button class=${buttonClass()} ?disabled=${props.loading} @click=${props.onRefresh}>
+          ${props.loading ? "加载中…" : "刷新"}
         </button>
       </div>
-      <div class="list" style="margin-top: 16px;">
+      <div class="${LIST_CLASS} mt-4">
         ${
           props.nodes.length === 0
             ? html`
-                <div class="muted">No nodes found.</div>
+                <div class=${MUTED_TEXT_CLASS}>未发现在线设备。</div>
               `
             : props.nodes.map((n) => renderNode(n))
         }
@@ -80,26 +100,26 @@ function renderDevices(props: NodesProps) {
   const pending = Array.isArray(list.pending) ? list.pending : [];
   const paired = Array.isArray(list.paired) ? list.paired : [];
   return html`
-    <section class="card">
-      <div class="row" style="justify-content: space-between;">
+    <section class=${CARD_CLASS}>
+      <div class="flex items-start justify-between gap-3">
         <div>
-          <div class="card-title">Devices</div>
-          <div class="card-sub">Pairing requests + role tokens.</div>
+          <div class=${CARD_TITLE_CLASS}>设备</div>
+          <div class=${CARD_SUB_CLASS}>配对申请、角色与令牌管理。</div>
         </div>
-        <button class="btn" ?disabled=${props.devicesLoading} @click=${props.onDevicesRefresh}>
-          ${props.devicesLoading ? "Loading…" : "Refresh"}
+        <button class=${buttonClass()} ?disabled=${props.devicesLoading} @click=${props.onDevicesRefresh}>
+          ${props.devicesLoading ? "加载中…" : "刷新"}
         </button>
       </div>
       ${
         props.devicesError
-          ? html`<div class="callout danger" style="margin-top: 12px;">${props.devicesError}</div>`
+          ? html`<div class="${calloutClass("danger")} mt-3">${props.devicesError}</div>`
           : nothing
       }
-      <div class="list" style="margin-top: 16px;">
+      <div class="${LIST_CLASS} mt-4">
         ${
           pending.length > 0
             ? html`
-              <div class="muted" style="margin-bottom: 8px;">Pending</div>
+              <div class="${MUTED_TEXT_CLASS} mb-2">待处理</div>
               ${pending.map((req) => renderPendingDevice(req, props))}
             `
             : nothing
@@ -107,7 +127,7 @@ function renderDevices(props: NodesProps) {
         ${
           paired.length > 0
             ? html`
-              <div class="muted" style="margin-top: 12px; margin-bottom: 8px;">Paired</div>
+              <div class="${MUTED_TEXT_CLASS} mb-2 mt-3">已配对</div>
               ${paired.map((device) => renderPairedDevice(device, props))}
             `
             : nothing
@@ -115,7 +135,7 @@ function renderDevices(props: NodesProps) {
         ${
           pending.length === 0 && paired.length === 0
             ? html`
-                <div class="muted">No paired devices.</div>
+                <div class=${MUTED_TEXT_CLASS}>暂无配对设备。</div>
               `
             : nothing
         }
@@ -126,26 +146,26 @@ function renderDevices(props: NodesProps) {
 
 function renderPendingDevice(req: PendingDevice, props: NodesProps) {
   const name = req.displayName?.trim() || req.deviceId;
-  const age = typeof req.ts === "number" ? formatRelativeTimestamp(req.ts) : "n/a";
-  const role = req.role?.trim() ? `role: ${req.role}` : "role: -";
-  const repair = req.isRepair ? " · repair" : "";
+  const age = typeof req.ts === "number" ? formatRelativeTimestamp(req.ts) : "暂无";
+  const role = req.role?.trim() ? `角色: ${req.role}` : "角色: -";
+  const repair = req.isRepair ? " · 修复请求" : "";
   const ip = req.remoteIp ? ` · ${req.remoteIp}` : "";
   return html`
-    <div class="list-item">
-      <div class="list-main">
-        <div class="list-title">${name}</div>
-        <div class="list-sub">${req.deviceId}${ip}</div>
-        <div class="muted" style="margin-top: 6px;">
-          ${role} · requested ${age}${repair}
+    <div class=${LIST_ITEM_CLASS}>
+      <div class=${LIST_MAIN_CLASS}>
+        <div class=${LIST_TITLE_CLASS}>${name}</div>
+        <div class=${LIST_SUB_CLASS}>${req.deviceId}${ip}</div>
+        <div class="${MUTED_TEXT_CLASS} mt-1.5">
+          ${role} · 申请于 ${age}${repair}
         </div>
       </div>
-      <div class="list-meta">
-        <div class="row" style="justify-content: flex-end; gap: 8px; flex-wrap: wrap;">
-          <button class="btn btn--sm primary" @click=${() => props.onDeviceApprove(req.requestId)}>
-            Approve
+      <div class=${LIST_META_CLASS}>
+        <div class="flex flex-wrap justify-end gap-2">
+          <button class=${buttonClass({ small: true, tone: "primary" })} @click=${() => props.onDeviceApprove(req.requestId)}>
+            通过
           </button>
-          <button class="btn btn--sm" @click=${() => props.onDeviceReject(req.requestId)}>
-            Reject
+          <button class=${buttonClass({ small: true })} @click=${() => props.onDeviceReject(req.requestId)}>
+            拒绝
           </button>
         </div>
       </div>
@@ -156,22 +176,22 @@ function renderPendingDevice(req: PendingDevice, props: NodesProps) {
 function renderPairedDevice(device: PairedDevice, props: NodesProps) {
   const name = device.displayName?.trim() || device.deviceId;
   const ip = device.remoteIp ? ` · ${device.remoteIp}` : "";
-  const roles = `roles: ${formatList(device.roles)}`;
-  const scopes = `scopes: ${formatList(device.scopes)}`;
+  const roles = `角色: ${formatList(device.roles)}`;
+  const scopes = `作用域: ${formatList(device.scopes)}`;
   const tokens = Array.isArray(device.tokens) ? device.tokens : [];
   return html`
-    <div class="list-item">
-      <div class="list-main">
-        <div class="list-title">${name}</div>
-        <div class="list-sub">${device.deviceId}${ip}</div>
-        <div class="muted" style="margin-top: 6px;">${roles} · ${scopes}</div>
+    <div class=${LIST_ITEM_CLASS}>
+      <div class=${LIST_MAIN_CLASS}>
+        <div class=${LIST_TITLE_CLASS}>${name}</div>
+        <div class=${LIST_SUB_CLASS}>${device.deviceId}${ip}</div>
+        <div class="${MUTED_TEXT_CLASS} mt-1.5">${roles} · ${scopes}</div>
         ${
           tokens.length === 0
             ? html`
-                <div class="muted" style="margin-top: 6px">Tokens: none</div>
+                <div class="${MUTED_TEXT_CLASS} mt-1.5">令牌：无</div>
               `
             : html`
-              <div class="muted" style="margin-top: 10px;">Tokens</div>
+              <div class="${MUTED_TEXT_CLASS} mt-2.5">令牌</div>
               <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
                 ${tokens.map((token) => renderTokenRow(device.deviceId, token, props))}
               </div>
@@ -183,30 +203,30 @@ function renderPairedDevice(device: PairedDevice, props: NodesProps) {
 }
 
 function renderTokenRow(deviceId: string, token: DeviceTokenSummary, props: NodesProps) {
-  const status = token.revokedAtMs ? "revoked" : "active";
-  const scopes = `scopes: ${formatList(token.scopes)}`;
+  const status = token.revokedAtMs ? "已撤销" : "生效中";
+  const scopes = `作用域: ${formatList(token.scopes)}`;
   const when = formatRelativeTimestamp(
     token.rotatedAtMs ?? token.createdAtMs ?? token.lastUsedAtMs ?? null,
   );
   return html`
-    <div class="row" style="justify-content: space-between; gap: 8px;">
-      <div class="list-sub">${token.role} · ${status} · ${scopes} · ${when}</div>
-      <div class="row" style="justify-content: flex-end; gap: 6px; flex-wrap: wrap;">
+    <div class="flex items-start justify-between gap-2">
+      <div class=${LIST_SUB_CLASS}>${token.role} · ${status} · ${scopes} · ${when}</div>
+      <div class="flex flex-wrap justify-end gap-1.5">
         <button
-          class="btn btn--sm"
+          class=${buttonClass({ small: true })}
           @click=${() => props.onDeviceRotate(deviceId, token.role, token.scopes)}
         >
-          Rotate
+          轮换
         </button>
         ${
           token.revokedAtMs
             ? nothing
             : html`
               <button
-                class="btn btn--sm danger"
+                class=${buttonClass({ small: true, tone: "danger" })}
                 @click=${() => props.onDeviceRevoke(deviceId, token.role)}
               >
-                Revoke
+                撤销
               </button>
             `
         }
@@ -271,28 +291,28 @@ function renderBindings(state: BindingState) {
   const supportsBinding = state.nodes.length > 0;
   const defaultValue = state.defaultBinding ?? "";
   return html`
-    <section class="card">
-      <div class="row" style="justify-content: space-between; align-items: center;">
+    <section class=${CARD_CLASS}>
+      <div class="flex items-start justify-between gap-3">
         <div>
-          <div class="card-title">Exec node binding</div>
-          <div class="card-sub">
-            Pin agents to a specific node when using <span class="mono">exec host=node</span>.
+          <div class=${CARD_TITLE_CLASS}>执行设备绑定</div>
+          <div class=${CARD_SUB_CLASS}>
+            在 <span class=${MONO_TEXT_CLASS}>exec host=node</span> 模式下，为助手固定执行设备。
           </div>
         </div>
         <button
-          class="btn"
+          class=${buttonClass()}
           ?disabled=${state.disabled || !state.configDirty}
           @click=${state.onSave}
         >
-          ${state.configSaving ? "Saving…" : "Save"}
+          ${state.configSaving ? "保存中…" : "保存"}
         </button>
       </div>
 
       ${
         state.formMode === "raw"
           ? html`
-              <div class="callout warn" style="margin-top: 12px">
-                Switch the Config tab to <strong>Form</strong> mode to edit bindings here.
+              <div class="${calloutClass("warn")} mt-3">
+                请先把配置页切到 <strong>表单模式</strong>，再在此编辑绑定策略。
               </div>
             `
           : nothing
@@ -300,23 +320,24 @@ function renderBindings(state: BindingState) {
 
       ${
         !state.ready
-          ? html`<div class="row" style="margin-top: 12px; gap: 12px;">
-            <div class="muted">Load config to edit bindings.</div>
-            <button class="btn" ?disabled=${state.configLoading} @click=${state.onLoadConfig}>
-              ${state.configLoading ? "Loading…" : "Load config"}
+          ? html`<div class="mt-3 flex items-center gap-3">
+            <div class=${MUTED_TEXT_CLASS}>请先加载配置后再编辑绑定。</div>
+            <button class=${buttonClass()} ?disabled=${state.configLoading} @click=${state.onLoadConfig}>
+              ${state.configLoading ? "加载中…" : "加载配置"}
             </button>
           </div>`
           : html`
-            <div class="list" style="margin-top: 16px;">
-              <div class="list-item">
-                <div class="list-main">
-                  <div class="list-title">Default binding</div>
-                  <div class="list-sub">Used when agents do not override a node binding.</div>
+            <div class="${LIST_CLASS} mt-4">
+              <div class=${LIST_ITEM_CLASS}>
+                <div class=${LIST_MAIN_CLASS}>
+                  <div class=${LIST_TITLE_CLASS}>默认绑定</div>
+                  <div class=${LIST_SUB_CLASS}>当智能体未配置单独绑定时，将使用该默认节点。</div>
                 </div>
-                <div class="list-meta">
-                  <label class="field">
-                    <span>Node</span>
+                <div class=${LIST_META_CLASS}>
+                  <label class=${FIELD_CLASS}>
+                    <span class=${FIELD_LABEL_CLASS}>节点</span>
                     <select
+                      class=${SELECT_CLASS}
                       ?disabled=${state.disabled || !supportsBinding}
                       @change=${(event: Event) => {
                         const target = event.target as HTMLSelectElement;
@@ -324,7 +345,7 @@ function renderBindings(state: BindingState) {
                         state.onBindDefault(value ? value : null);
                       }}
                     >
-                      <option value="" ?selected=${defaultValue === ""}>Any node</option>
+                      <option value="" ?selected=${defaultValue === ""}>任意节点</option>
                       ${state.nodes.map(
                         (node) =>
                           html`<option
@@ -339,7 +360,7 @@ function renderBindings(state: BindingState) {
                   ${
                     !supportsBinding
                       ? html`
-                          <div class="muted">No nodes with system.run available.</div>
+                          <div class=${MUTED_TEXT_CLASS}>暂无支持 system.run 的节点。</div>
                         `
                       : nothing
                   }
@@ -349,7 +370,7 @@ function renderBindings(state: BindingState) {
               ${
                 state.agents.length === 0
                   ? html`
-                      <div class="muted">No agents found.</div>
+                      <div class=${MUTED_TEXT_CLASS}>未找到智能体。</div>
                     `
                   : state.agents.map((agent) => renderAgentBinding(agent, state))
               }
@@ -365,22 +386,23 @@ function renderAgentBinding(agent: BindingAgent, state: BindingState) {
   const label = agent.name?.trim() ? `${agent.name} (${agent.id})` : agent.id;
   const supportsBinding = state.nodes.length > 0;
   return html`
-    <div class="list-item">
-      <div class="list-main">
-        <div class="list-title">${label}</div>
-        <div class="list-sub">
-          ${agent.isDefault ? "default agent" : "agent"} ·
+    <div class=${LIST_ITEM_CLASS}>
+      <div class=${LIST_MAIN_CLASS}>
+        <div class=${LIST_TITLE_CLASS}>${label}</div>
+        <div class=${LIST_SUB_CLASS}>
+          ${agent.isDefault ? "默认智能体" : "智能体"} ·
           ${
             bindingValue === "__default__"
-              ? `uses default (${state.defaultBinding ?? "any"})`
-              : `override: ${agent.binding}`
+              ? `使用默认 (${state.defaultBinding ?? "任意"})`
+              : `覆盖为: ${agent.binding}`
           }
         </div>
       </div>
-      <div class="list-meta">
-        <label class="field">
-          <span>Binding</span>
+      <div class=${LIST_META_CLASS}>
+        <label class=${FIELD_CLASS}>
+          <span class=${FIELD_LABEL_CLASS}>绑定</span>
           <select
+            class=${SELECT_CLASS}
             ?disabled=${state.disabled || !supportsBinding}
             @change=${(event: Event) => {
               const target = event.target as HTMLSelectElement;
@@ -389,7 +411,7 @@ function renderAgentBinding(agent: BindingAgent, state: BindingState) {
             }}
           >
             <option value="__default__" ?selected=${bindingValue === "__default__"}>
-              Use default
+              使用默认
             </option>
             ${state.nodes.map(
               (node) =>
@@ -494,25 +516,25 @@ function renderNode(node: Record<string, unknown>) {
   const paired = Boolean(node.paired);
   const title =
     (typeof node.displayName === "string" && node.displayName.trim()) ||
-    (typeof node.nodeId === "string" ? node.nodeId : "unknown");
+    (typeof node.nodeId === "string" ? node.nodeId : "未知节点");
   const caps = Array.isArray(node.caps) ? (node.caps as unknown[]) : [];
   const commands = Array.isArray(node.commands) ? (node.commands as unknown[]) : [];
   return html`
-    <div class="list-item">
-      <div class="list-main">
-        <div class="list-title">${title}</div>
-        <div class="list-sub">
+    <div class=${LIST_ITEM_CLASS}>
+      <div class=${LIST_MAIN_CLASS}>
+        <div class=${LIST_TITLE_CLASS}>${title}</div>
+        <div class=${LIST_SUB_CLASS}>
           ${typeof node.nodeId === "string" ? node.nodeId : ""}
           ${typeof node.remoteIp === "string" ? ` · ${node.remoteIp}` : ""}
           ${typeof node.version === "string" ? ` · ${node.version}` : ""}
         </div>
-        <div class="chip-row" style="margin-top: 6px;">
-          <span class="chip">${paired ? "paired" : "unpaired"}</span>
-          <span class="chip ${connected ? "chip-ok" : "chip-warn"}">
-            ${connected ? "connected" : "offline"}
+        <div class="${CHIP_ROW_CLASS} mt-1.5">
+          <span class=${CHIP_CLASS}>${paired ? "已配对" : "未配对"}</span>
+          <span class="${CHIP_CLASS} ${connected ? "chip-ok" : "chip-warn"}">
+            ${connected ? "在线" : "离线"}
           </span>
-          ${caps.slice(0, 12).map((c) => html`<span class="chip">${String(c)}</span>`)}
-          ${commands.slice(0, 8).map((c) => html`<span class="chip">${String(c)}</span>`)}
+          ${caps.slice(0, 12).map((c) => html`<span class=${CHIP_CLASS}>${String(c)}</span>`)}
+          ${commands.slice(0, 8).map((c) => html`<span class=${CHIP_CLASS}>${String(c)}</span>`)}
         </div>
       </div>
     </div>

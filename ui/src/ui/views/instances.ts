@@ -1,6 +1,22 @@
 import { html, nothing } from "lit";
 import { formatPresenceAge, formatPresenceSummary } from "../presenter.ts";
 import type { PresenceEntry } from "../types.ts";
+import {
+  buttonClass,
+  calloutClass,
+  CARD_CLASS,
+  CARD_SUB_CLASS,
+  CARD_TITLE_CLASS,
+  CHIP_CLASS,
+  CHIP_ROW_CLASS,
+  LIST_CLASS,
+  LIST_ITEM_CLASS,
+  LIST_MAIN_CLASS,
+  LIST_META_CLASS,
+  LIST_SUB_CLASS,
+  LIST_TITLE_CLASS,
+  MUTED_TEXT_CLASS,
+} from "./tw.ts";
 
 export type InstancesProps = {
   loading: boolean;
@@ -12,35 +28,35 @@ export type InstancesProps = {
 
 export function renderInstances(props: InstancesProps) {
   return html`
-    <section class="card">
-      <div class="row" style="justify-content: space-between;">
+    <section class=${CARD_CLASS}>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div class="card-title">Connected Instances</div>
-          <div class="card-sub">Presence beacons from the gateway and clients.</div>
+          <div class=${CARD_TITLE_CLASS}>连接实例</div>
+          <div class=${CARD_SUB_CLASS}>来自网关与客户端的在线心跳。</div>
         </div>
-        <button class="btn" ?disabled=${props.loading} @click=${props.onRefresh}>
-          ${props.loading ? "Loading…" : "Refresh"}
+        <button class=${buttonClass()} ?disabled=${props.loading} @click=${props.onRefresh}>
+          ${props.loading ? "加载中…" : "刷新"}
         </button>
       </div>
       ${
         props.lastError
-          ? html`<div class="callout danger" style="margin-top: 12px;">
+          ? html`<div class="${calloutClass("danger")} mt-3">
             ${props.lastError}
           </div>`
           : nothing
       }
       ${
         props.statusMessage
-          ? html`<div class="callout" style="margin-top: 12px;">
+          ? html`<div class="${calloutClass("default")} mt-3">
             ${props.statusMessage}
           </div>`
           : nothing
       }
-      <div class="list" style="margin-top: 16px;">
+      <div class=${LIST_CLASS}>
         ${
           props.entries.length === 0
             ? html`
-                <div class="muted">No instances reported yet.</div>
+                <div class=${MUTED_TEXT_CLASS}>暂无实例上报。</div>
               `
             : props.entries.map((entry) => renderEntry(entry))
         }
@@ -50,39 +66,39 @@ export function renderInstances(props: InstancesProps) {
 }
 
 function renderEntry(entry: PresenceEntry) {
-  const lastInput = entry.lastInputSeconds != null ? `${entry.lastInputSeconds}s ago` : "n/a";
-  const mode = entry.mode ?? "unknown";
+  const lastInput = entry.lastInputSeconds != null ? `${entry.lastInputSeconds} 秒前` : "暂无";
+  const mode = entry.mode ?? "未知";
   const roles = Array.isArray(entry.roles) ? entry.roles.filter(Boolean) : [];
   const scopes = Array.isArray(entry.scopes) ? entry.scopes.filter(Boolean) : [];
   const scopesLabel =
     scopes.length > 0
       ? scopes.length > 3
-        ? `${scopes.length} scopes`
-        : `scopes: ${scopes.join(", ")}`
+        ? `${scopes.length} 个作用域`
+        : `作用域: ${scopes.join(", ")}`
       : null;
   return html`
-    <div class="list-item">
-      <div class="list-main">
-        <div class="list-title">${entry.host ?? "unknown host"}</div>
-        <div class="list-sub">${formatPresenceSummary(entry)}</div>
-        <div class="chip-row">
-          <span class="chip">${mode}</span>
-          ${roles.map((role) => html`<span class="chip">${role}</span>`)}
-          ${scopesLabel ? html`<span class="chip">${scopesLabel}</span>` : nothing}
-          ${entry.platform ? html`<span class="chip">${entry.platform}</span>` : nothing}
-          ${entry.deviceFamily ? html`<span class="chip">${entry.deviceFamily}</span>` : nothing}
+    <div class=${LIST_ITEM_CLASS}>
+      <div class=${LIST_MAIN_CLASS}>
+        <div class=${LIST_TITLE_CLASS}>${entry.host ?? "未知主机"}</div>
+        <div class=${LIST_SUB_CLASS}>${formatPresenceSummary(entry)}</div>
+        <div class=${CHIP_ROW_CLASS}>
+          <span class=${CHIP_CLASS}>${mode}</span>
+          ${roles.map((role) => html`<span class=${CHIP_CLASS}>${role}</span>`)}
+          ${scopesLabel ? html`<span class=${CHIP_CLASS}>${scopesLabel}</span>` : nothing}
+          ${entry.platform ? html`<span class=${CHIP_CLASS}>${entry.platform}</span>` : nothing}
+          ${entry.deviceFamily ? html`<span class=${CHIP_CLASS}>${entry.deviceFamily}</span>` : nothing}
           ${
             entry.modelIdentifier
-              ? html`<span class="chip">${entry.modelIdentifier}</span>`
+              ? html`<span class=${CHIP_CLASS}>${entry.modelIdentifier}</span>`
               : nothing
           }
-          ${entry.version ? html`<span class="chip">${entry.version}</span>` : nothing}
+          ${entry.version ? html`<span class=${CHIP_CLASS}>${entry.version}</span>` : nothing}
         </div>
       </div>
-      <div class="list-meta">
+      <div class=${LIST_META_CLASS}>
         <div>${formatPresenceAge(entry)}</div>
-        <div class="muted">Last input ${lastInput}</div>
-        <div class="muted">Reason ${entry.reason ?? ""}</div>
+        <div class=${MUTED_TEXT_CLASS}>最后输入 ${lastInput}</div>
+        <div class=${MUTED_TEXT_CLASS}>原因 ${entry.reason ?? "暂无"}</div>
       </div>
     </div>
   `;

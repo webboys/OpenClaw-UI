@@ -7,19 +7,37 @@ import {
   type NostrProfileFormState,
   type NostrProfileFormCallbacks,
 } from "./channels.nostr-profile-form.ts";
+import { boolLabel, localizeChannelValue, renderChannelStatusList } from "./channels.shared.ts";
 import type { ChannelsProps } from "./channels.types.ts";
+import {
+  buttonClass,
+  calloutClass,
+  CARD_CLASS,
+  CARD_SUB_CLASS,
+  CARD_TITLE_CLASS,
+  LIST_CLASS,
+  LIST_ITEM_CLASS,
+  LIST_MAIN_CLASS,
+  LIST_SUB_CLASS,
+  LIST_TITLE_CLASS,
+  MUTED_TEXT_CLASS,
+} from "./tw.ts";
 
 /**
  * Truncate a pubkey for display (shows first and last 8 chars)
  */
 function truncatePubkey(pubkey: string | null | undefined): string {
   if (!pubkey) {
-    return "n/a";
+    return "暂无";
   }
   if (pubkey.length <= 20) {
     return pubkey;
   }
   return `${pubkey.slice(0, 8)}...${pubkey.slice(-8)}`;
+}
+
+function displayAccountId(value: string): string {
+  return value === "default" ? "默认" : value;
 }
 
 export function renderNostrCard(params: {
@@ -59,33 +77,33 @@ export function renderNostrCard(params: {
     const displayName = profile?.displayName ?? profile?.name ?? account.name ?? account.accountId;
 
     return html`
-      <div class="account-card">
-        <div class="account-card-header">
-          <div class="account-card-title">${displayName}</div>
-          <div class="account-card-id">${account.accountId}</div>
+      <div class=${LIST_ITEM_CLASS}>
+        <div class=${LIST_MAIN_CLASS}>
+          <div class=${LIST_TITLE_CLASS}>${displayName}</div>
+          <div class=${LIST_SUB_CLASS}>${displayAccountId(account.accountId)}</div>
         </div>
-        <div class="status-list account-card-status">
-          <div>
-            <span class="label">Running</span>
-            <span>${account.running ? "Yes" : "No"}</span>
-          </div>
-          <div>
-            <span class="label">Configured</span>
-            <span>${account.configured ? "Yes" : "No"}</span>
-          </div>
-          <div>
-            <span class="label">Public Key</span>
-            <span class="monospace" title="${publicKey ?? ""}">${truncatePubkey(publicKey)}</span>
-          </div>
-          <div>
-            <span class="label">Last inbound</span>
-            <span>${account.lastInboundAt ? formatRelativeTimestamp(account.lastInboundAt) : "n/a"}</span>
-          </div>
+        <div class="w-full md:w-auto md:min-w-[280px]">
+          ${renderChannelStatusList([
+            { label: "运行中", value: boolLabel(account.running) },
+            { label: "已配置", value: boolLabel(account.configured) },
+            {
+              label: "公钥",
+              value: html`<span class="font-[var(--mono)] text-[12px]" title="${publicKey ?? ""}"
+                >${truncatePubkey(publicKey)}</span
+              >`,
+            },
+            {
+              label: "最后入站",
+              value: account.lastInboundAt
+                ? formatRelativeTimestamp(account.lastInboundAt)
+                : "暂无",
+            },
+          ])}
           ${
             account.lastError
-              ? html`
-                <div class="account-card-error">${account.lastError}</div>
-              `
+              ? html`<div class="pt-2 text-[12px] text-[var(--danger)]">
+                  ${localizeChannelValue(account.lastError)}
+                </div>`
               : nothing
           }
         </div>
@@ -121,18 +139,17 @@ export function renderNostrCard(params: {
     const hasAnyProfileData = name || displayName || about || picture || nip05;
 
     return html`
-      <div style="margin-top: 16px; padding: 12px; background: var(--bg-secondary); border-radius: 8px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <div style="font-weight: 500;">Profile</div>
+      <div class="mt-4 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg-elevated)] p-3">
+        <div class="mb-2 flex items-center justify-between gap-2">
+          <div class="text-sm font-medium text-[var(--text-strong)]">资料</div>
           ${
             summaryConfigured
               ? html`
                 <button
-                  class="btn btn-sm"
+                  class=${buttonClass({ small: true })}
                   @click=${onEditProfile}
-                  style="font-size: 12px; padding: 4px 8px;"
                 >
-                  Edit Profile
+                  编辑资料
                 </button>
               `
               : nothing
@@ -141,15 +158,15 @@ export function renderNostrCard(params: {
         ${
           hasAnyProfileData
             ? html`
-              <div class="status-list">
+              <div class="space-y-2">
                 ${
                   picture
                     ? html`
-                      <div style="margin-bottom: 8px;">
+                      <div>
                         <img
                           src=${picture}
-                          alt="Profile picture"
-                          style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color);"
+                          alt="资料头像"
+                          class="size-12 rounded-full border-2 border-[var(--border)] object-cover"
                           @error=${(e: Event) => {
                             (e.target as HTMLImageElement).style.display = "none";
                           }}
@@ -158,23 +175,40 @@ export function renderNostrCard(params: {
                     `
                     : nothing
                 }
-                ${name ? html`<div><span class="label">Name</span><span>${name}</span></div>` : nothing}
+                ${
+                  name
+                    ? html`<div class="flex items-center justify-between gap-3">
+                        <span class=${MUTED_TEXT_CLASS}>名称</span><span>${name}</span>
+                      </div>`
+                    : nothing
+                }
                 ${
                   displayName
-                    ? html`<div><span class="label">Display Name</span><span>${displayName}</span></div>`
+                    ? html`<div class="flex items-center justify-between gap-3">
+                        <span class=${MUTED_TEXT_CLASS}>显示名</span><span>${displayName}</span>
+                      </div>`
                     : nothing
                 }
                 ${
                   about
-                    ? html`<div><span class="label">About</span><span style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">${about}</span></div>`
+                    ? html`<div class="flex items-start justify-between gap-3">
+                        <span class=${MUTED_TEXT_CLASS}>简介</span
+                        ><span class="max-w-[300px] overflow-hidden text-ellipsis">${about}</span>
+                      </div>`
                     : nothing
                 }
-                ${nip05 ? html`<div><span class="label">NIP-05</span><span>${nip05}</span></div>` : nothing}
+                ${
+                  nip05
+                    ? html`<div class="flex items-center justify-between gap-3">
+                        <span class=${MUTED_TEXT_CLASS}>NIP-05</span><span>${nip05}</span>
+                      </div>`
+                    : nothing
+                }
               </div>
             `
             : html`
-                <div style="color: var(--text-muted); font-size: 13px">
-                  No profile set. Click "Edit Profile" to add your name, bio, and avatar.
+                <div class=${MUTED_TEXT_CLASS}>
+                  当前未设置资料。点击“编辑资料”可补充名称、简介和头像。
                 </div>
               `
         }
@@ -183,45 +217,39 @@ export function renderNostrCard(params: {
   };
 
   return html`
-    <div class="card">
-      <div class="card-title">Nostr</div>
-      <div class="card-sub">Decentralized DMs via Nostr relays (NIP-04).</div>
+    <div class=${CARD_CLASS}>
+      <div class=${CARD_TITLE_CLASS}>Nostr</div>
+      <div class=${CARD_SUB_CLASS}>基于 Nostr Relay 的去中心化私信（NIP-04）。</div>
       ${accountCountLabel}
 
       ${
         hasMultipleAccounts
           ? html`
-            <div class="account-card-list">
+            <div class=${LIST_CLASS}>
               ${nostrAccounts.map((account) => renderAccountCard(account))}
             </div>
           `
-          : html`
-            <div class="status-list" style="margin-top: 16px;">
-              <div>
-                <span class="label">Configured</span>
-                <span>${summaryConfigured ? "Yes" : "No"}</span>
-              </div>
-              <div>
-                <span class="label">Running</span>
-                <span>${summaryRunning ? "Yes" : "No"}</span>
-              </div>
-              <div>
-                <span class="label">Public Key</span>
-                <span class="monospace" title="${summaryPublicKey ?? ""}"
+          : renderChannelStatusList([
+              { label: "已配置", value: boolLabel(summaryConfigured) },
+              { label: "运行中", value: boolLabel(summaryRunning) },
+              {
+                label: "公钥",
+                value: html`<span class="font-[var(--mono)] text-[12px]" title="${summaryPublicKey ?? ""}"
                   >${truncatePubkey(summaryPublicKey)}</span
-                >
-              </div>
-              <div>
-                <span class="label">Last start</span>
-                <span>${summaryLastStartAt ? formatRelativeTimestamp(summaryLastStartAt) : "n/a"}</span>
-              </div>
-            </div>
-          `
+                >`,
+              },
+              {
+                label: "最近启动",
+                value: summaryLastStartAt ? formatRelativeTimestamp(summaryLastStartAt) : "暂无",
+              },
+            ])
       }
 
       ${
         summaryLastError
-          ? html`<div class="callout danger" style="margin-top: 12px;">${summaryLastError}</div>`
+          ? html`<div class="${calloutClass("danger")} mt-3">
+              ${localizeChannelValue(summaryLastError)}
+            </div>`
           : nothing
       }
 
@@ -229,8 +257,8 @@ export function renderNostrCard(params: {
 
       ${renderChannelConfigSection({ channelId: "nostr", props })}
 
-      <div class="row" style="margin-top: 12px;">
-        <button class="btn" @click=${() => props.onRefresh(false)}>Refresh</button>
+      <div class="mt-3">
+        <button class=${buttonClass()} @click=${() => props.onRefresh(false)}>刷新</button>
       </div>
     </div>
   `;

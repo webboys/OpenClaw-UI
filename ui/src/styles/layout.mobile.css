@@ -266,9 +266,13 @@
   }
 
   .log-row {
-    grid-template-columns: 1fr;
-    gap: 4px;
+    gap: 6px;
     padding: 8px;
+  }
+
+  .log-row-head {
+    grid-template-columns: auto auto;
+    row-gap: 4px;
   }
 
   .log-time {
@@ -280,6 +284,8 @@
   }
 
   .log-subsystem {
+    grid-column: 1 / -1;
+    justify-self: start;
     font-size: 11px;
   }
 

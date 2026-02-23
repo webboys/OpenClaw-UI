@@ -8,6 +8,17 @@ import {
   computeSkillReasons,
   renderSkillStatusChips,
 } from "./skills-shared.ts";
+import {
+  buttonClass,
+  calloutClass,
+  CARD_CLASS,
+  CARD_SUB_CLASS,
+  CARD_TITLE_CLASS,
+  FIELD_CLASS,
+  FIELD_LABEL_CLASS,
+  INPUT_CLASS,
+  MUTED_TEXT_CLASS,
+} from "./tw.ts";
 
 export type SkillsProps = {
   loading: boolean;
@@ -36,51 +47,55 @@ export function renderSkills(props: SkillsProps) {
   const groups = groupSkills(filtered);
 
   return html`
-    <section class="card">
-      <div class="row" style="justify-content: space-between;">
+    <section class=${CARD_CLASS}>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div class="card-title">Skills Registry</div>
-          <div class="card-sub">Bundled, managed, and workspace skills across the gateway.</div>
+          <div class=${CARD_TITLE_CLASS}>能力中心</div>
+          <div class=${CARD_SUB_CLASS}>网关中的内置、托管与工作区能力。</div>
         </div>
-        <button class="btn" ?disabled=${props.loading} @click=${props.onRefresh}>
-          ${props.loading ? "Loading…" : "Refresh"}
+        <button class=${buttonClass()} ?disabled=${props.loading} @click=${props.onRefresh}>
+          ${props.loading ? "加载中…" : "刷新"}
         </button>
       </div>
 
-      <div class="filters" style="margin-top: 14px;">
-        <label class="field" style="flex: 1;">
-          <span>Filter</span>
+      <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <label class="${FIELD_CLASS} sm:flex-1">
+          <span class=${FIELD_LABEL_CLASS}>筛选</span>
           <input
+            class=${INPUT_CLASS}
             .value=${props.filter}
             @input=${(e: Event) => props.onFilterChange((e.target as HTMLInputElement).value)}
-            placeholder="Search registry skills"
+            placeholder="搜索能力"
           />
         </label>
-        <div class="muted">${filtered.length} shown</div>
+        <div class=${MUTED_TEXT_CLASS}>已显示 ${filtered.length} 项</div>
       </div>
 
       ${
         props.error
-          ? html`<div class="callout danger" style="margin-top: 12px;">${props.error}</div>`
+          ? html`<div class="${calloutClass("danger")} mt-3">${props.error}</div>`
           : nothing
       }
 
       ${
         filtered.length === 0
           ? html`
-              <div class="muted" style="margin-top: 16px">No skills found.</div>
+              <div class="mt-4 ${MUTED_TEXT_CLASS}">未找到能力。</div>
             `
           : html`
-            <div class="agent-skills-groups" style="margin-top: 16px;">
+            <div class="mt-4 space-y-3">
               ${groups.map((group) => {
                 const collapsedByDefault = group.id === "workspace" || group.id === "built-in";
                 return html`
-                  <details class="agent-skills-group" ?open=${!collapsedByDefault}>
-                    <summary class="agent-skills-header">
+                  <details
+                    class="overflow-hidden rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg-elevated)]"
+                    ?open=${!collapsedByDefault}
+                  >
+                    <summary class="flex cursor-pointer items-center justify-between gap-2 px-3 py-2 text-sm font-medium text-[var(--text-strong)]">
                       <span>${group.label}</span>
-                      <span class="muted">${group.skills.length}</span>
+                      <span class=${MUTED_TEXT_CLASS}>${group.skills.length}</span>
                     </summary>
-                    <div class="list skills-grid">
+                    <div class="grid gap-3 border-t border-[var(--border)] p-3">
                       ${group.skills.map((skill) => renderSkill(skill, props))}
                     </div>
                   </details>
@@ -102,18 +117,20 @@ function renderSkill(skill: SkillStatusEntry, props: SkillsProps) {
   const missing = computeSkillMissing(skill);
   const reasons = computeSkillReasons(skill);
   return html`
-    <div class="list-item">
-      <div class="list-main">
-        <div class="list-title">
+    <div class="flex flex-col gap-3 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--card)] p-3 md:flex-row md:items-start md:justify-between">
+      <div class="min-w-0 flex-1 space-y-1.5">
+        <div class="text-sm font-semibold text-[var(--text-strong)]">
           ${skill.emoji ? `${skill.emoji} ` : ""}${skill.name}
         </div>
-        <div class="list-sub">${clampText(skill.description, 140)}</div>
+        <div class="text-[13px] leading-relaxed text-[var(--muted)]">
+          ${clampText(skill.description, 140)}
+        </div>
         ${renderSkillStatusChips({ skill, showBundledBadge })}
         ${
           missing.length > 0
             ? html`
-              <div class="muted" style="margin-top: 6px;">
-                Missing: ${missing.join(", ")}
+              <div class="pt-1 ${MUTED_TEXT_CLASS}">
+                缺失: ${missing.join(", ")}
               </div>
             `
             : nothing
@@ -121,30 +138,30 @@ function renderSkill(skill: SkillStatusEntry, props: SkillsProps) {
         ${
           reasons.length > 0
             ? html`
-              <div class="muted" style="margin-top: 6px;">
-                Reason: ${reasons.join(", ")}
+              <div class="pt-1 ${MUTED_TEXT_CLASS}">
+                原因: ${reasons.join(", ")}
               </div>
             `
             : nothing
         }
       </div>
-      <div class="list-meta">
-        <div class="row" style="justify-content: flex-end; flex-wrap: wrap;">
+      <div class="flex w-full flex-col gap-2 md:w-auto md:items-end">
+        <div class="flex flex-wrap justify-end gap-2">
           <button
-            class="btn"
+            class=${buttonClass()}
             ?disabled=${busy}
             @click=${() => props.onToggle(skill.skillKey, skill.disabled)}
           >
-            ${skill.disabled ? "Enable" : "Disable"}
+            ${skill.disabled ? "启用" : "禁用"}
           </button>
           ${
             canInstall
               ? html`<button
-                class="btn"
+                class=${buttonClass()}
                 ?disabled=${busy}
                 @click=${() => props.onInstall(skill.skillKey, skill.name, skill.install[0].id)}
               >
-                ${busy ? "Installing…" : skill.install[0].label}
+                ${busy ? "安装中…" : skill.install[0].label}
               </button>`
               : nothing
           }
@@ -152,12 +169,9 @@ function renderSkill(skill: SkillStatusEntry, props: SkillsProps) {
         ${
           message
             ? html`<div
-              class="muted"
-              style="margin-top: 8px; color: ${
-                message.kind === "error"
-                  ? "var(--danger-color, #d14343)"
-                  : "var(--success-color, #0a7f5a)"
-              };"
+              class="text-[12px] ${
+                message.kind === "error" ? "text-[var(--danger)]" : "text-[var(--ok)]"
+              }"
             >
               ${message.message}
             </div>`
@@ -166,9 +180,10 @@ function renderSkill(skill: SkillStatusEntry, props: SkillsProps) {
         ${
           skill.primaryEnv
             ? html`
-              <div class="field" style="margin-top: 10px;">
-                <span>API key</span>
+              <div class="${FIELD_CLASS} mt-1 w-full md:w-[280px]">
+                <span class=${FIELD_LABEL_CLASS}>API 密钥</span>
                 <input
+                  class=${INPUT_CLASS}
                   type="password"
                   .value=${apiKey}
                   @input=${(e: Event) =>
@@ -176,12 +191,11 @@ function renderSkill(skill: SkillStatusEntry, props: SkillsProps) {
                 />
               </div>
               <button
-                class="btn primary"
-                style="margin-top: 8px;"
+                class=${buttonClass({ tone: "primary" })}
                 ?disabled=${busy}
                 @click=${() => props.onSaveKey(skill.skillKey)}
               >
-                Save key
+                保存密钥
               </button>
             `
             : nothing

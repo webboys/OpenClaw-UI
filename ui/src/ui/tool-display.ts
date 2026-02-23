@@ -11,6 +11,7 @@ import {
   resolveWriteDetail,
   type ToolDisplaySpec as ToolDisplaySpecBase,
 } from "../../../src/agents/tool-display-common.js";
+import { localizeUiText } from "./error-localization.ts";
 import type { IconName } from "./icons.ts";
 import rawConfig from "./tool-display.json" with { type: "json" };
 
@@ -67,8 +68,8 @@ export function resolveToolDisplay(params: {
   const key = name.toLowerCase();
   const spec = TOOL_MAP[key];
   const icon = (spec?.icon ?? FALLBACK.icon ?? "puzzle") as IconName;
-  const title = spec?.title ?? defaultTitle(name);
-  const label = spec?.label ?? title;
+  const title = localizeUiText(spec?.title ?? defaultTitle(name));
+  const label = localizeUiText(spec?.label ?? title);
   const actionRaw =
     params.args && typeof params.args === "object"
       ? ((params.args as Record<string, unknown>).action as string | undefined)
@@ -81,7 +82,7 @@ export function resolveToolDisplay(params: {
       : key === "web_fetch"
         ? "fetch"
         : key.replace(/_/g, " ").replace(/\./g, " ");
-  const verb = normalizeVerb(actionSpec?.label ?? action ?? fallbackVerb);
+  const verb = normalizeVerb(localizeUiText(actionSpec?.label ?? action ?? fallbackVerb));
 
   let detail: string | undefined;
   if (key === "exec") {
@@ -137,13 +138,13 @@ export function formatToolDetail(display: ToolDisplay): string | undefined {
       .split(" · ")
       .map((part) => part.trim())
       .filter((part) => part.length > 0)
-      .join(", ");
-    return compact ? `with ${compact}` : undefined;
+      .join("，");
+    return compact || undefined;
   }
   return display.detail;
 }
 
 export function formatToolSummary(display: ToolDisplay): string {
   const detail = formatToolDetail(display);
-  return detail ? `${display.label}: ${detail}` : display.label;
+  return detail ? `${display.label}：${detail}` : display.label;
 }

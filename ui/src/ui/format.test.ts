@@ -1,7 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import { i18n } from "../i18n/index.ts";
 import { formatRelativeTimestamp, stripThinkingTags } from "./format.ts";
 
 describe("formatAgo", () => {
+  beforeAll(async () => {
+    await i18n.setLocale("en");
+  });
+
   it("returns 'in <1m' for timestamps less than 60s in the future", () => {
     expect(formatRelativeTimestamp(Date.now() + 30_000)).toBe("in <1m");
   });
@@ -67,5 +72,9 @@ describe("stripThinkingTags", () => {
     // This should not crash and should handle gracefully
     expect(stripThinkingTags("<final\nHello")).toBe("<final\nHello");
     expect(stripThinkingTags("Hello</final>")).toBe("Hello");
+  });
+
+  it("strips inline reply/audio directives from assistant output", () => {
+    expect(stripThinkingTags("[[reply_to_current]] [[audio_as_voice]] Hello")).toBe("Hello");
   });
 });

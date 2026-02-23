@@ -1,5 +1,6 @@
 import { html } from "lit";
 import { buildUsageAggregateTail } from "../../../../src/shared/usage-aggregates.js";
+import { getUiLocale } from "../format.ts";
 import { UsageSessionEntry, UsageTotals, UsageAggregates } from "./usageTypes.ts";
 
 const CHARS_PER_TOKEN = 4;
@@ -21,7 +22,7 @@ function formatTokens(n: number): string {
 function formatHourLabel(hour: number): string {
   const date = new Date();
   date.setHours(hour, 0, 0, 0);
-  return date.toLocaleTimeString(undefined, { hour: "numeric" });
+  return date.toLocaleTimeString(getUiLocale(), { hour: "numeric" });
 }
 
 function buildPeakErrorHours(sessions: UsageSessionEntry[], timeZone: "local" | "utc") {
@@ -74,7 +75,7 @@ function buildPeakErrorHours(sessions: UsageSessionEntry[], timeZone: "local" | 
     .map((entry) => ({
       label: formatHourLabel(entry.hour),
       value: `${(entry.rate * 100).toFixed(2)}%`,
-      sub: `${Math.round(entry.errors)} errors · ${Math.round(entry.msgs)} msgs`,
+      sub: `${Math.round(entry.errors)} 错误 · ${Math.round(entry.msgs)} 消息`,
     }));
 }
 
@@ -85,7 +86,20 @@ type UsageMosaicStats = {
   weekdayTotals: Array<{ label: string; tokens: number }>;
 };
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAYS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAYS_ZH = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+const WEEKDAYS_PT_BR = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"];
+
+function getWeekdayLabels(): string[] {
+  const locale = getUiLocale();
+  if (locale.startsWith("zh")) {
+    return WEEKDAYS_ZH;
+  }
+  if (locale.toLowerCase() === "pt-br") {
+    return WEEKDAYS_PT_BR;
+  }
+  return WEEKDAYS_EN;
+}
 
 function getZonedHour(date: Date, zone: "local" | "utc"): number {
   return zone === "utc" ? date.getUTCHours() : date.getHours();
@@ -148,7 +162,7 @@ function buildUsageMosaicStats(
     }
   }
 
-  const weekdayLabels = WEEKDAYS.map((label, index) => ({
+  const weekdayLabels = getWeekdayLabels().map((label, index) => ({
     label,
     tokens: weekdayTotals[index],
   }));
@@ -173,12 +187,12 @@ function renderUsageMosaic(
       <div class="card usage-mosaic">
         <div class="usage-mosaic-header">
           <div>
-            <div class="usage-mosaic-title">Activity by Time</div>
-            <div class="usage-mosaic-sub">Estimates require session timestamps.</div>
+            <div class="usage-mosaic-title">按时间活跃度</div>
+            <div class="usage-mosaic-sub">估算依赖会话时间戳。</div>
           </div>
-          <div class="usage-mosaic-total">${formatTokens(0)} tokens</div>
+          <div class="usage-mosaic-total">${formatTokens(0)} 令牌</div>
         </div>
-        <div class="muted" style="padding: 12px; text-align: center;">No timeline data yet.</div>
+        <div class="muted" style="padding: 12px; text-align: center;">暂无时间线数据。</div>
       </div>
     `;
   }
@@ -190,16 +204,16 @@ function renderUsageMosaic(
     <div class="card usage-mosaic">
       <div class="usage-mosaic-header">
         <div>
-          <div class="usage-mosaic-title">Activity by Time</div>
+          <div class="usage-mosaic-title">按时间活跃度</div>
           <div class="usage-mosaic-sub">
-            Estimated from session spans (first/last activity). Time zone: ${timeZone === "utc" ? "UTC" : "Local"}.
+            基于会话跨度估算（首次/最后活跃）。时区：${timeZone === "utc" ? "UTC" : "本地"}。
           </div>
         </div>
-        <div class="usage-mosaic-total">${formatTokens(stats.totalTokens)} tokens</div>
+        <div class="usage-mosaic-total">${formatTokens(stats.totalTokens)} 令牌</div>
       </div>
       <div class="usage-mosaic-grid">
         <div class="usage-mosaic-section">
-          <div class="usage-mosaic-section-title">Day of Week</div>
+          <div class="usage-mosaic-section-title">星期分布</div>
           <div class="usage-daypart-grid">
             ${stats.weekdayTotals.map((part) => {
               const intensity = Math.min(part.tokens / maxWeekday, 1);
@@ -216,14 +230,14 @@ function renderUsageMosaic(
         </div>
         <div class="usage-mosaic-section">
           <div class="usage-mosaic-section-title">
-            <span>Hours</span>
+            <span>小时分布</span>
             <span class="usage-mosaic-sub">0 → 23</span>
           </div>
           <div class="usage-hour-grid">
             ${stats.hourTotals.map((value, hour) => {
               const intensity = Math.min(value / maxHour, 1);
               const bg = value > 0 ? `rgba(255, 77, 77, ${0.08 + intensity * 0.7})` : "transparent";
-              const title = `${hour}:00 · ${formatTokens(value)} tokens`;
+              const title = `${hour}:00 · ${formatTokens(value)} 令牌`;
               const border = intensity > 0.7 ? "rgba(255, 77, 77, 0.6)" : "rgba(255, 77, 77, 0.2)";
               const selected = selectedHours.includes(hour);
               return html`
@@ -237,16 +251,16 @@ function renderUsageMosaic(
             })}
           </div>
           <div class="usage-hour-labels">
-            <span>Midnight</span>
-            <span>4am</span>
-            <span>8am</span>
-            <span>Noon</span>
-            <span>4pm</span>
-            <span>8pm</span>
+            <span>凌晨</span>
+            <span>04:00</span>
+            <span>08:00</span>
+            <span>中午</span>
+            <span>16:00</span>
+            <span>20:00</span>
           </div>
           <div class="usage-hour-legend">
             <span></span>
-            Low → High token density
+            令牌密度：低 → 高
           </div>
         </div>
       </div>
@@ -277,7 +291,7 @@ function formatDayLabel(dateStr: string): string {
   if (!date) {
     return dateStr;
   }
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return date.toLocaleDateString(getUiLocale(), { month: "short", day: "numeric" });
 }
 
 function formatFullDate(dateStr: string): string {
@@ -285,7 +299,11 @@ function formatFullDate(dateStr: string): string {
   if (!date) {
     return dateStr;
   }
-  return date.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+  return date.toLocaleDateString(getUiLocale(), {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 const emptyUsageTotals = (): UsageTotals => ({

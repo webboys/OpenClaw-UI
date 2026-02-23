@@ -1,4 +1,5 @@
 import type { GatewayBrowserClient } from "../gateway.ts";
+import { localizeUiError } from "../error-localization.ts";
 import type { SessionsUsageResult, CostUsageSummary, SessionUsageTimeSeries } from "../types.ts";
 import type { SessionLogEntry } from "../views/usage.ts";
 
@@ -58,7 +59,7 @@ export async function loadUsage(
       state.usageCostSummary = costRes as CostUsageSummary;
     }
   } catch (err) {
-    state.usageError = String(err);
+    state.usageError = localizeUiError(err);
   } finally {
     state.usageLoading = false;
   }

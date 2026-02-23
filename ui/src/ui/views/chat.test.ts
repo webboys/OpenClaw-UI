@@ -66,7 +66,7 @@ describe("chat view", () => {
 
     const indicator = container.querySelector(".compaction-indicator--active");
     expect(indicator).not.toBeNull();
-    expect(indicator?.textContent).toContain("Compacting context...");
+    expect(indicator?.textContent).toContain("正在压缩上下文...");
   });
 
   it("renders completion indicator shortly after compaction", () => {
@@ -87,7 +87,7 @@ describe("chat view", () => {
 
     const indicator = container.querySelector(".compaction-indicator--complete");
     expect(indicator).not.toBeNull();
-    expect(indicator?.textContent).toContain("Context compacted");
+    expect(indicator?.textContent).toContain("上下文压缩完成");
     nowSpy.mockRestore();
   });
 
@@ -125,12 +125,12 @@ describe("chat view", () => {
     );
 
     const stopButton = Array.from(container.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.trim() === "Stop",
+      (btn) => btn.textContent?.trim() === "停止",
     );
     expect(stopButton).not.toBeUndefined();
     stopButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(onAbort).toHaveBeenCalledTimes(1);
-    expect(container.textContent).not.toContain("New session");
+    expect(container.textContent).not.toContain("新会话");
   });
 
   it("shows a new session button when aborting is unavailable", () => {
@@ -147,11 +147,11 @@ describe("chat view", () => {
     );
 
     const newSessionButton = Array.from(container.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.trim() === "New session",
+      (btn) => btn.textContent?.trim() === "新会话",
     );
     expect(newSessionButton).not.toBeUndefined();
     newSessionButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(onNewSession).toHaveBeenCalledTimes(1);
-    expect(container.textContent).not.toContain("Stop");
+    expect(container.textContent).not.toContain("停止");
   });
 });

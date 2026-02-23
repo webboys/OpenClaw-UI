@@ -71,6 +71,7 @@ export function renderNostrProfileForm(params: {
   accountId: string;
 }): TemplateResult {
   const { state, callbacks, accountId } = params;
+  const displayAccountId = accountId === "default" ? "默认" : accountId;
   const isDirty = isFormDirty(state);
 
   const renderField = (
@@ -148,7 +149,7 @@ export function renderNostrProfileForm(params: {
       <div style="margin-bottom: 12px;">
         <img
           src=${picture}
-          alt="Profile picture preview"
+          alt="头像预览"
           style="max-width: 80px; max-height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color);"
           @error=${(e: Event) => {
             const img = e.target as HTMLImageElement;
@@ -166,8 +167,8 @@ export function renderNostrProfileForm(params: {
   return html`
     <div class="nostr-profile-form" style="padding: 16px; background: var(--bg-secondary); border-radius: 8px; margin-top: 12px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <div style="font-weight: 600; font-size: 16px;">Edit Profile</div>
-        <div style="font-size: 12px; color: var(--text-muted);">Account: ${accountId}</div>
+        <div style="font-weight: 600; font-size: 16px;">编辑资料</div>
+        <div style="font-size: 12px; color: var(--text-muted);">账号：${displayAccountId}</div>
       </div>
 
       ${
@@ -184,57 +185,57 @@ export function renderNostrProfileForm(params: {
 
       ${renderPicturePreview()}
 
-      ${renderField("name", "Username", {
-        placeholder: "satoshi",
+      ${renderField("name", "用户名", {
+        placeholder: "my_name",
         maxLength: 256,
-        help: "Short username (e.g., satoshi)",
+        help: "简短用户名（例如 my_name）",
       })}
 
-      ${renderField("displayName", "Display Name", {
-        placeholder: "Satoshi Nakamoto",
+      ${renderField("displayName", "显示名称", {
+        placeholder: "我的显示名称",
         maxLength: 256,
-        help: "Your full display name",
+        help: "完整展示名称",
       })}
 
-      ${renderField("about", "Bio", {
+      ${renderField("about", "简介", {
         type: "textarea",
-        placeholder: "Tell people about yourself...",
+        placeholder: "介绍一下你自己…",
         maxLength: 2000,
-        help: "A brief bio or description",
+        help: "简短个人介绍",
       })}
 
-      ${renderField("picture", "Avatar URL", {
+      ${renderField("picture", "头像地址", {
         type: "url",
         placeholder: "https://example.com/avatar.jpg",
-        help: "HTTPS URL to your profile picture",
+        help: "头像图片地址（HTTPS）",
       })}
 
       ${
         state.showAdvanced
           ? html`
             <div style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 12px;">
-              <div style="font-weight: 500; margin-bottom: 12px; color: var(--text-muted);">Advanced</div>
+              <div style="font-weight: 500; margin-bottom: 12px; color: var(--text-muted);">高级设置</div>
 
-              ${renderField("banner", "Banner URL", {
+              ${renderField("banner", "横幅地址", {
                 type: "url",
                 placeholder: "https://example.com/banner.jpg",
-                help: "HTTPS URL to a banner image",
+                help: "横幅图片地址（HTTPS）",
               })}
 
-              ${renderField("website", "Website", {
+              ${renderField("website", "网站", {
                 type: "url",
                 placeholder: "https://example.com",
-                help: "Your personal website",
+                help: "个人网站地址",
               })}
 
-              ${renderField("nip05", "NIP-05 Identifier", {
-                placeholder: "you@example.com",
-                help: "Verifiable identifier (e.g., you@domain.com)",
+              ${renderField("nip05", "NIP-05 标识", {
+                placeholder: "me@example.com",
+                help: "可验证身份（例如 me@domain.com）",
               })}
 
-              ${renderField("lud16", "Lightning Address", {
-                placeholder: "you@getalby.com",
-                help: "Lightning address for tips (LUD-16)",
+              ${renderField("lud16", "闪电地址", {
+                placeholder: "me@getalby.com",
+                help: "用于打赏的闪电地址（LUD-16）",
               })}
             </div>
           `
@@ -247,7 +248,7 @@ export function renderNostrProfileForm(params: {
           @click=${callbacks.onSave}
           ?disabled=${state.saving || !isDirty}
         >
-          ${state.saving ? "Saving..." : "Save & Publish"}
+          ${state.saving ? "保存中..." : "保存并发布"}
         </button>
 
         <button
@@ -255,14 +256,14 @@ export function renderNostrProfileForm(params: {
           @click=${callbacks.onImport}
           ?disabled=${state.importing || state.saving}
         >
-          ${state.importing ? "Importing..." : "Import from Relays"}
+          ${state.importing ? "导入中..." : "从中继导入"}
         </button>
 
         <button
           class="btn"
           @click=${callbacks.onToggleAdvanced}
         >
-          ${state.showAdvanced ? "Hide Advanced" : "Show Advanced"}
+          ${state.showAdvanced ? "收起高级设置" : "展开高级设置"}
         </button>
 
         <button
@@ -270,16 +271,14 @@ export function renderNostrProfileForm(params: {
           @click=${callbacks.onCancel}
           ?disabled=${state.saving}
         >
-          Cancel
+          取消
         </button>
       </div>
 
       ${
         isDirty
           ? html`
-              <div style="font-size: 12px; color: var(--warning-color); margin-top: 8px">
-                You have unsaved changes
-              </div>
+              <div style="font-size: 12px; color: var(--warning-color); margin-top: 8px">你有尚未保存的修改</div>
             `
           : nothing
       }

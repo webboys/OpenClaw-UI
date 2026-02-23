@@ -85,6 +85,8 @@ export const pt_BR: TranslationMap = {
       title: "Acesso ao Gateway",
       subtitle: "Onde o dashboard conecta e como autentica.",
       wsUrl: "URL WebSocket",
+      wsUrlHint:
+        "Cole ws://, wss:// ou um URL http(s) do dashboard. Links com token são analisados automaticamente.",
       token: "Token do Gateway",
       password: "Senha (não armazenada)",
       sessionKey: "Chave de Sessão Padrão",
@@ -115,7 +117,8 @@ export const pt_BR: TranslationMap = {
       title: "Notas",
       subtitle: "Lembretes rápidos para configurações de controle remoto.",
       tailscaleTitle: "Tailscale Serve",
-      tailscaleText: "Prefira o modo Serve para manter o gateway em loopback com autenticação tailnet.",
+      tailscaleText:
+        "Prefira o modo Serve para manter o gateway em loopback com autenticação tailnet.",
       sessionTitle: "Higiene de sessão",
       sessionText: "Use /new ou sessions.patch para redefinir contexto.",
       cronTitle: "Lembretes de cron",
@@ -143,6 +146,7 @@ export const pt_BR: TranslationMap = {
       genericMessage: "Verifique a saúde do gateway e reconecte.",
       troubleshootingDocs: "Docs de troubleshooting do gateway",
       runLabel: "Execute:",
+      rawErrorLabel: "Erro bruto",
       copyCommands: "Copiar comandos",
     },
     auth: {

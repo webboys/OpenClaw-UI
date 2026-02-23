@@ -2,6 +2,7 @@ import { toNumber } from "../format.ts";
 import type { GatewayBrowserClient } from "../gateway.ts";
 import type { CronJob, CronRunLogEntry, CronStatus } from "../types.ts";
 import type { CronFormState } from "../ui-types.ts";
+import { localizeUiError, localizeUiText } from "../error-localization.ts";
 
 export type CronState = {
   client: GatewayBrowserClient | null;
@@ -43,7 +44,7 @@ export async function loadCronStatus(state: CronState) {
     const res = await state.client.request<CronStatus>("cron.status", {});
     state.cronStatus = res;
   } catch (err) {
-    state.cronError = String(err);
+    state.cronError = localizeUiError(err);
   }
 }
 
@@ -62,7 +63,7 @@ export async function loadCronJobs(state: CronState) {
     });
     state.cronJobs = Array.isArray(res.jobs) ? res.jobs : [];
   } catch (err) {
-    state.cronError = String(err);
+    state.cronError = localizeUiError(err);
   } finally {
     state.cronLoading = false;
   }
@@ -72,14 +73,14 @@ export function buildCronSchedule(form: CronFormState) {
   if (form.scheduleKind === "at") {
     const ms = Date.parse(form.scheduleAt);
     if (!Number.isFinite(ms)) {
-      throw new Error("Invalid run time.");
+      throw new Error(localizeUiText("执行时间无效。"));
     }
     return { kind: "at" as const, at: new Date(ms).toISOString() };
   }
   if (form.scheduleKind === "every") {
     const amount = toNumber(form.everyAmount, 0);
     if (amount <= 0) {
-      throw new Error("Invalid interval amount.");
+      throw new Error(localizeUiText("间隔数值无效。"));
     }
     const unit = form.everyUnit;
     const mult = unit === "minutes" ? 60_000 : unit === "hours" ? 3_600_000 : 86_400_000;
@@ -87,7 +88,7 @@ export function buildCronSchedule(form: CronFormState) {
   }
   const expr = form.cronExpr.trim();
   if (!expr) {
-    throw new Error("Cron expression required.");
+    throw new Error(localizeUiText("定时表达式不能为空。"));
   }
   return { kind: "cron" as const, expr, tz: form.cronTz.trim() || undefined };
 }
@@ -96,13 +97,13 @@ export function buildCronPayload(form: CronFormState) {
   if (form.payloadKind === "systemEvent") {
     const text = form.payloadText.trim();
     if (!text) {
-      throw new Error("System event text required.");
+      throw new Error(localizeUiText("系统事件文本不能为空。"));
     }
     return { kind: "systemEvent" as const, text };
   }
   const message = form.payloadText.trim();
   if (!message) {
-    throw new Error("Agent message required.");
+    throw new Error(localizeUiText("智能体消息不能为空。"));
   }
   const payload: {
     kind: "agentTurn";
@@ -155,7 +156,7 @@ export async function addCronJob(state: CronState) {
       delivery,
     };
     if (!job.name) {
-      throw new Error("Name required.");
+      throw new Error(localizeUiText("名称不能为空。"));
     }
     await state.client.request("cron.add", job);
     state.cronForm = {
@@ -167,7 +168,7 @@ export async function addCronJob(state: CronState) {
     await loadCronJobs(state);
     await loadCronStatus(state);
   } catch (err) {
-    state.cronError = String(err);
+    state.cronError = localizeUiError(err);
   } finally {
     state.cronBusy = false;
   }
@@ -184,7 +185,7 @@ export async function toggleCronJob(state: CronState, job: CronJob, enabled: boo
     await loadCronJobs(state);
     await loadCronStatus(state);
   } catch (err) {
-    state.cronError = String(err);
+    state.cronError = localizeUiError(err);
   } finally {
     state.cronBusy = false;
   }
@@ -200,7 +201,7 @@ export async function runCronJob(state: CronState, job: CronJob) {
     await state.client.request("cron.run", { id: job.id, mode: "force" });
     await loadCronRuns(state, job.id);
   } catch (err) {
-    state.cronError = String(err);
+    state.cronError = localizeUiError(err);
   } finally {
     state.cronBusy = false;
   }
@@ -221,7 +222,7 @@ export async function removeCronJob(state: CronState, job: CronJob) {
     await loadCronJobs(state);
     await loadCronStatus(state);
   } catch (err) {
-    state.cronError = String(err);
+    state.cronError = localizeUiError(err);
   } finally {
     state.cronBusy = false;
   }
@@ -239,6 +240,6 @@ export async function loadCronRuns(state: CronState, jobId: string) {
     state.cronRunsJobId = jobId;
     state.cronRuns = Array.isArray(res.entries) ? res.entries : [];
   } catch (err) {
-    state.cronError = String(err);
+    state.cronError = localizeUiError(err);
   }
 }

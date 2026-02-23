@@ -6,6 +6,7 @@ import type { GatewayHelloOk } from "../gateway.ts";
 import type { Tab } from "../navigation.ts";
 import { formatNextRun } from "../presenter.ts";
 import type { UiSettings } from "../storage.ts";
+import { buildDeploymentReadiness } from "./overview-readiness.ts";
 
 export type OverviewProps = {
   connected: boolean;
@@ -83,7 +84,9 @@ function resolveConnectionFix(lastError: string | null): ConnectionFix | null {
       title: t("overview.fix.pairingTitle"),
       message: t("overview.fix.pairingMessage"),
       commands: ["openclaw devices list", "openclaw devices approve <requestId>"],
-      docs: [{ label: t("overview.fix.devicesDocs"), href: "https://docs.openclaw.ai/cli/devices" }],
+      docs: [
+        { label: t("overview.fix.devicesDocs"), href: "https://docs.openclaw.ai/cli/devices" },
+      ],
       needsPairingApproval: true,
     };
   }
@@ -92,7 +95,9 @@ function resolveConnectionFix(lastError: string | null): ConnectionFix | null {
       title: t("overview.fix.authTitle"),
       message: t("overview.fix.authMessage"),
       commands: ["openclaw dashboard --no-open", "openclaw config get gateway.auth.token"],
-      docs: [{ label: t("overview.fix.dashboardDocs"), href: "https://docs.openclaw.ai/web/dashboard" }],
+      docs: [
+        { label: t("overview.fix.dashboardDocs"), href: "https://docs.openclaw.ai/web/dashboard" },
+      ],
     };
   }
   if (lower.includes("secure context") || lower.includes("device identity required")) {
@@ -113,9 +118,11 @@ function resolveConnectionFix(lastError: string | null): ConnectionFix | null {
       title: t("overview.fix.originTitle"),
       message: t("overview.fix.originMessage"),
       commands: [
-        'openclaw config set gateway.controlUi.allowedOrigins "[\\"http://localhost:5173\\"]"',
+        'openclaw config set gateway.controlUi.allowedOrigins "[\\"https://claw.vip996.pro\\"]"',
       ],
-      docs: [{ label: t("overview.fix.controlUiDocs"), href: "https://docs.openclaw.ai/web/control-ui" }],
+      docs: [
+        { label: t("overview.fix.controlUiDocs"), href: "https://docs.openclaw.ai/web/control-ui" },
+      ],
     };
   }
   return {
@@ -223,6 +230,80 @@ function renderConnectionFixCard(fix: ConnectionFix | null) {
   `;
 }
 
+function renderDeploymentChecklist(readiness: ReturnType<typeof buildDeploymentReadiness>) {
+  return html`
+    <div class="callout overview-readiness" style="margin-top: 12px;">
+      <div class="row" style="justify-content: space-between; align-items: center; gap: 8px;">
+        <strong>${t("overview.readiness.title")}</strong>
+        <span class="pill">
+          ${t("overview.readiness.progress", {
+            done: String(readiness.completedCount),
+            total: String(readiness.totalCount),
+          })}
+        </span>
+      </div>
+      <div class="overview-readiness__list">
+        ${readiness.steps.map(
+          (step) => html`
+            <div class="overview-readiness__item">
+              <span class="overview-readiness__state ${step.done ? "overview-readiness__state--done" : ""}">
+                ${step.done ? "OK" : "..."}
+              </span>
+              <div class="overview-readiness__text">
+                <div class="overview-readiness__title">
+                  ${t(`overview.readiness.steps.${step.id}.label`)}
+                  <span class="muted">
+                    (${step.done ? t("overview.readiness.done") : t("overview.readiness.pending")})
+                  </span>
+                </div>
+                <div class="muted">${t(`overview.readiness.details.${step.detailKey}`)}</div>
+              </div>
+            </div>
+          `,
+        )}
+      </div>
+      ${
+        readiness.parsedTokenDetected
+          ? html`<div class="muted" style="margin-top: 8px;">
+              ${t("overview.readiness.detectedToken")}
+            </div>`
+          : null
+      }
+      ${
+        readiness.parsedSessionKey
+          ? html`<div class="muted" style="margin-top: 4px;">
+              ${t("overview.readiness.detectedSession", { session: readiness.parsedSessionKey })}
+            </div>`
+          : null
+      }
+      ${
+        readiness.nextCommand
+          ? html`
+              <div class="row" style="margin-top: 10px; justify-content: space-between; align-items: center; gap: 8px;">
+                <span>${t("overview.readiness.nextCommandLabel")}</span>
+                <button
+                  data-testid="overview-copy-next-command"
+                  class="btn btn--sm"
+                  @click=${() => void copyCommandsToClipboard([readiness.nextCommand ?? ""])}
+                >
+                  ${t("overview.readiness.copyNextCommand")}
+                </button>
+              </div>
+              <pre class="code-block" style="margin-top: 6px;">${readiness.nextCommand}</pre>
+            `
+          : html`<div class="callout success" style="margin-top: 10px;">
+              ${t("overview.readiness.readyMessage")}
+            </div>`
+      }
+      <div style="margin-top: 8px;">
+        <a class="session-link" href="https://docs.openclaw.ai/web/dashboard" target="_blank" rel="noreferrer">
+          ${t("overview.readiness.docsLabel")}
+        </a>
+      </div>
+    </div>
+  `;
+}
+
 export function renderOverview(props: OverviewProps) {
   const snapshot = props.hello?.snapshot as
     | {
@@ -238,6 +319,13 @@ export function renderOverview(props: OverviewProps) {
   const authMode = snapshot?.authMode;
   const isTrustedProxy = authMode === "trusted-proxy";
   const connectionFix = resolveConnectionFix(props.lastError);
+  const readiness = buildDeploymentReadiness({
+    gatewayUrl: props.settings.gatewayUrl,
+    token: props.settings.token,
+    password: props.password,
+    connected: props.connected,
+    authMode,
+  });
 
   const authHint = (() => {
     if (props.connected || !props.lastError) {
@@ -328,12 +416,12 @@ export function renderOverview(props: OverviewProps) {
   const currentLocale = i18n.getLocale();
 
   return html`
-    <section class="grid grid-cols-2">
-      <div class="card">
+    <section class="overview-bento">
+      <article class="card overview-bento__card overview-bento__card--access">
         <div class="card-title">${t("overview.access.title")}</div>
         <div class="card-sub">${t("overview.access.subtitle")}</div>
-        <div class="form-grid" style="margin-top: 16px;">
-          <label class="field">
+        <div class="form-grid overview-access-grid" style="margin-top: 16px;">
+          <label class="field overview-access-field overview-access-field--ws">
             <span>${t("overview.access.wsUrl")}</span>
             <input
               .value=${props.settings.gatewayUrl}
@@ -341,14 +429,17 @@ export function renderOverview(props: OverviewProps) {
                 const v = (e.target as HTMLInputElement).value;
                 props.onSettingsChange({ ...props.settings, gatewayUrl: v });
               }}
-              placeholder="ws://100.x.y.z:18789"
+              placeholder="wss://claw.vip996.pro"
             />
+            <div class="muted" style="margin-top: 4px;">
+              ${t("overview.access.wsUrlHint")}
+            </div>
           </label>
           ${
             isTrustedProxy
               ? ""
               : html`
-                <label class="field">
+                <label class="field overview-access-field overview-access-field--token">
                   <span>${t("overview.access.token")}</span>
                   <input
                     .value=${props.settings.token}
@@ -422,9 +513,10 @@ export function renderOverview(props: OverviewProps) {
             isTrustedProxy ? t("overview.access.trustedProxy") : t("overview.access.connectHint")
           }</span>
         </div>
-      </div>
+        ${renderDeploymentChecklist(readiness)}
+      </article>
 
-      <div class="card">
+      <article class="card overview-bento__card overview-bento__card--snapshot">
         <div class="card-title">${t("overview.snapshot.title")}</div>
         <div class="card-sub">${t("overview.snapshot.subtitle")}</div>
         <div class="stat-grid" style="margin-top: 16px;">
@@ -452,7 +544,11 @@ export function renderOverview(props: OverviewProps) {
         ${
           props.lastError
             ? html`<div class="callout danger" style="margin-top: 14px;">
-              <div>${props.lastError}</div>
+              <div>${connectionFix?.message ?? t("overview.fix.genericMessage")}</div>
+              <details style="margin-top: 8px;">
+                <summary>${t("overview.fix.rawErrorLabel")}</summary>
+                <pre class="code-block" style="margin-top: 6px;">${props.lastError}</pre>
+              </details>
               ${authHint ?? ""}
               ${insecureContextHint ?? ""}
             </div>`
@@ -468,13 +564,10 @@ export function renderOverview(props: OverviewProps) {
             ? renderPendingApprovals(props)
             : null
         }
-      </div>
-    </section>
-
-    <section class="grid grid-cols-3" style="margin-top: 18px;">
+      </article>
       <button
         type="button"
-        class="card stat-card stat-card-action"
+        class="card stat-card stat-card-action overview-bento__card overview-bento__card--instances"
         @click=${() => props.onOpenRuntimePanel("instances")}
       >
         <div class="stat-label">${t("overview.stats.instances")}</div>
@@ -483,7 +576,7 @@ export function renderOverview(props: OverviewProps) {
       </button>
       <button
         type="button"
-        class="card stat-card stat-card-action"
+        class="card stat-card stat-card-action overview-bento__card overview-bento__card--sessions"
         @click=${() => props.onOpenRuntimePanel("sessions")}
       >
         <div class="stat-label">${t("overview.stats.sessions")}</div>
@@ -492,7 +585,7 @@ export function renderOverview(props: OverviewProps) {
       </button>
       <button
         type="button"
-        class="card stat-card stat-card-action"
+        class="card stat-card stat-card-action overview-bento__card overview-bento__card--cron"
         @click=${() => props.onOpenTab("cron")}
       >
         <div class="stat-label">${t("overview.stats.cron")}</div>
@@ -501,9 +594,8 @@ export function renderOverview(props: OverviewProps) {
         </div>
         <div class="muted">${t("overview.stats.cronNext", { time: formatNextRun(props.cronNext) })}</div>
       </button>
-    </section>
 
-    <section class="card" style="margin-top: 18px;">
+      <section class="card overview-bento__card overview-bento__card--notes">
       <div class="card-title">${t("overview.notes.title")}</div>
       <div class="card-sub">${t("overview.notes.subtitle")}</div>
       <div class="note-grid" style="margin-top: 14px;">
@@ -522,6 +614,7 @@ export function renderOverview(props: OverviewProps) {
           <div class="muted">${t("overview.notes.cronText")}</div>
         </div>
       </div>
+      </section>
     </section>
   `;
 }

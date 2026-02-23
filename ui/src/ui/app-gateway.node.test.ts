@@ -2,9 +2,36 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GATEWAY_EVENT_UPDATE_AVAILABLE } from "../../../src/gateway/events.js";
 import { connectGateway } from "./app-gateway.ts";
 
+vi.hoisted(() => {
+  Object.defineProperty(globalThis, "localStorage", {
+    value: {
+      getItem: () => null,
+      setItem: () => undefined,
+      removeItem: () => undefined,
+      clear: () => undefined,
+      key: () => null,
+      length: 0,
+    },
+    configurable: true,
+  });
+  Object.defineProperty(globalThis, "navigator", {
+    value: {
+      language: "en-US",
+      platform: "test",
+      userAgent: "vitest",
+    },
+    configurable: true,
+  });
+});
+
 type GatewayClientMock = {
   start: ReturnType<typeof vi.fn>;
   stop: ReturnType<typeof vi.fn>;
+  options: {
+    url: string;
+    token?: string;
+    password?: string;
+  };
   emitClose: (code: number, reason?: string) => void;
   emitGap: (expected: number, received: number) => void;
   emitEvent: (evt: { event: string; payload?: unknown; seq?: number }) => void;
@@ -19,6 +46,9 @@ vi.mock("./gateway.ts", () => {
 
     constructor(
       private opts: {
+        url: string;
+        token?: string;
+        password?: string;
         onClose?: (info: { code: number; reason: string }) => void;
         onGap?: (info: { expected: number; received: number }) => void;
         onEvent?: (evt: { event: string; payload?: unknown; seq?: number }) => void;
@@ -27,6 +57,11 @@ vi.mock("./gateway.ts", () => {
       gatewayClientInstances.push({
         start: this.start,
         stop: this.stop,
+        options: {
+          url: this.opts.url,
+          token: this.opts.token,
+          password: this.opts.password,
+        },
         emitClose: (code, reason) => {
           this.opts.onClose?.({ code, reason: reason ?? "" });
         },
@@ -106,7 +141,7 @@ describe("connectGateway", () => {
 
     secondClient.emitGap(20, 24);
     expect(host.lastError).toBe(
-      "event gap detected (expected seq 20, got 24); refresh recommended",
+      "检测到事件序号跳跃（期望 20，收到 24），建议刷新。",
     );
   });
 
@@ -176,6 +211,34 @@ describe("connectGateway", () => {
     expect(host.lastError).toBeNull();
 
     secondClient.emitClose(1005);
-    expect(host.lastError).toBe("disconnected (1005): no reason");
+    expect(host.lastError).toBe("连接已断开（1005）：无原因");
+  });
+
+  it("accepts dashboard URL input and forwards normalized gateway settings", () => {
+    const host = createHost();
+    host.settings.gatewayUrl =
+      "http://127.0.0.1:18789/openclaw/#token=dashboard-token&session=agent:ops:main";
+
+    connectGateway(host);
+
+    const client = gatewayClientInstances[0];
+    expect(client).toBeDefined();
+    expect(client.options.url).toBe("ws://127.0.0.1:18789/openclaw/");
+    expect(client.options.token).toBe("dashboard-token");
+    expect(host.settings.gatewayUrl).toBe("ws://127.0.0.1:18789/openclaw/");
+    expect(host.settings.token).toBe("dashboard-token");
+    expect(host.sessionKey).toBe("agent:ops:main");
+    expect(host.settings.sessionKey).toBe("agent:ops:main");
+  });
+
+  it("reports a clear error when gateway URL is invalid", () => {
+    const host = createHost();
+    host.settings.gatewayUrl = "ftp://gateway.example";
+
+    connectGateway(host);
+
+    expect(gatewayClientInstances).toHaveLength(0);
+    expect(host.client).toBeNull();
+    expect(host.lastError).toContain("网关地址无效");
   });
 });

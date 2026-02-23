@@ -1,4 +1,5 @@
 import type { GatewayBrowserClient } from "../gateway.ts";
+import { localizeUiError } from "../error-localization.ts";
 import type {
   AgentFileEntry,
   AgentsFilesGetResult,
@@ -49,7 +50,7 @@ export async function loadAgentFiles(state: AgentFilesState, agentId: string) {
       }
     }
   } catch (err) {
-    state.agentFilesError = String(err);
+    state.agentFilesError = localizeUiError(err);
   } finally {
     state.agentFilesLoading = false;
   }
@@ -90,7 +91,7 @@ export async function loadAgentFileContent(
       }
     }
   } catch (err) {
-    state.agentFilesError = String(err);
+    state.agentFilesError = localizeUiError(err);
   } finally {
     state.agentFilesLoading = false;
   }
@@ -119,7 +120,7 @@ export async function saveAgentFile(
       state.agentFileDrafts = { ...state.agentFileDrafts, [name]: content };
     }
   } catch (err) {
-    state.agentFilesError = String(err);
+    state.agentFilesError = localizeUiError(err);
   } finally {
     state.agentFileSaving = false;
   }

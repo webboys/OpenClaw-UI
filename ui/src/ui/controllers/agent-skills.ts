@@ -1,4 +1,5 @@
 import type { GatewayBrowserClient } from "../gateway.ts";
+import { localizeUiError } from "../error-localization.ts";
 import type { SkillStatusReport } from "../types.ts";
 
 export type AgentSkillsState = {
@@ -26,7 +27,7 @@ export async function loadAgentSkills(state: AgentSkillsState, agentId: string) 
       state.agentSkillsAgentId = agentId;
     }
   } catch (err) {
-    state.agentSkillsError = String(err);
+    state.agentSkillsError = localizeUiError(err);
   } finally {
     state.agentSkillsLoading = false;
   }

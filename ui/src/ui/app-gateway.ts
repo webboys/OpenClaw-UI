@@ -26,6 +26,8 @@ import {
 } from "./controllers/exec-approval.ts";
 import { loadNodes } from "./controllers/nodes.ts";
 import { loadSessions } from "./controllers/sessions.ts";
+import { localizeUiText } from "./error-localization.ts";
+import { parseGatewayAccessInput } from "./gateway-url.ts";
 import type { GatewayEventFrame, GatewayHelloOk } from "./gateway.ts";
 import { GatewayBrowserClient } from "./gateway.ts";
 import type { Tab } from "./navigation.ts";
@@ -126,6 +128,58 @@ function applySessionDefaults(host: GatewayHost, defaults?: SessionDefaultsSnaps
   }
 }
 
+function resolveGatewayConnectInput(
+  host: GatewayHost,
+): { gatewayUrl: string; token?: string } | null {
+  const parsed = parseGatewayAccessInput(host.settings.gatewayUrl);
+  if (!parsed) {
+    return null;
+  }
+
+  const parsedSessionKey = parsed.sessionKey?.trim();
+  const nextToken = parsed.token ?? host.settings.token;
+
+  let nextSettings = host.settings;
+  let settingsChanged = false;
+
+  if (parsed.gatewayUrl !== nextSettings.gatewayUrl) {
+    nextSettings = { ...nextSettings, gatewayUrl: parsed.gatewayUrl };
+    settingsChanged = true;
+  }
+
+  if (nextToken !== nextSettings.token) {
+    nextSettings = { ...nextSettings, token: nextToken };
+    settingsChanged = true;
+  }
+
+  if (parsedSessionKey) {
+    if (parsedSessionKey !== host.sessionKey) {
+      host.sessionKey = parsedSessionKey;
+    }
+    if (
+      parsedSessionKey !== nextSettings.sessionKey ||
+      parsedSessionKey !== nextSettings.lastActiveSessionKey
+    ) {
+      nextSettings = {
+        ...nextSettings,
+        sessionKey: parsedSessionKey,
+        lastActiveSessionKey: parsedSessionKey,
+      };
+      settingsChanged = true;
+    }
+  }
+
+  if (settingsChanged) {
+    applySettings(host as unknown as Parameters<typeof applySettings>[0], nextSettings);
+  }
+
+  const trimmedToken = nextToken.trim();
+  return {
+    gatewayUrl: parsed.gatewayUrl,
+    token: trimmedToken ? trimmedToken : undefined,
+  };
+}
+
 export function connectGateway(host: GatewayHost) {
   host.lastError = null;
   host.hello = null;
@@ -134,9 +188,17 @@ export function connectGateway(host: GatewayHost) {
   host.execApprovalError = null;
 
   const previousClient = host.client;
+  const connectInput = resolveGatewayConnectInput(host);
+  if (!connectInput) {
+    previousClient?.stop();
+    host.client = null;
+    host.lastError = localizeUiText("网关地址无效。请使用 ws:// 或 wss://，或粘贴控制台 http(s) 地址。");
+    return;
+  }
+
   const client = new GatewayBrowserClient({
-    url: host.settings.gatewayUrl,
-    token: host.settings.token.trim() ? host.settings.token : undefined,
+    url: connectInput.gatewayUrl,
+    token: connectInput.token,
     password: host.password.trim() ? host.password : undefined,
     clientName: "openclaw-control-ui",
     mode: "webchat",
@@ -167,7 +229,7 @@ export function connectGateway(host: GatewayHost) {
       host.connected = false;
       // Code 1012 = Service Restart (expected during config saves, don't show as error)
       if (code !== 1012) {
-        host.lastError = `disconnected (${code}): ${reason || "no reason"}`;
+        host.lastError = localizeUiText(`连接已断开（${code}）：${reason || "无原因"}`);
       }
     },
     onEvent: (evt) => {
@@ -180,7 +242,7 @@ export function connectGateway(host: GatewayHost) {
       if (host.client !== client) {
         return;
       }
-      host.lastError = `event gap detected (expected seq ${expected}, got ${received}); refresh recommended`;
+      host.lastError = localizeUiText(`检测到事件序号跳跃（期望 ${expected}，收到 ${received}），建议刷新。`);
     },
   });
   host.client = client;

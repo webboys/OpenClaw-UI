@@ -1,7 +1,9 @@
 import { html } from "lit";
 import type { ConfigUiHints } from "../types.ts";
+import { renderChannelStatusList } from "./channels.shared.ts";
 import type { ChannelsProps } from "./channels.types.ts";
 import { analyzeConfigSchema, renderNode, schemaType, type JsonSchema } from "./config-form.ts";
+import { buttonClass, calloutClass, MUTED_TEXT_CLASS } from "./tw.ts";
 
 type ChannelConfigFormProps = {
   channelId: string;
@@ -67,7 +69,7 @@ const EXTRA_CHANNEL_FIELDS = ["groupPolicy", "streamMode", "dmPolicy"] as const;
 
 function formatExtraValue(raw: unknown): string {
   if (raw == null) {
-    return "n/a";
+    return "不适用";
   }
   if (typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean") {
     return String(raw);
@@ -75,7 +77,7 @@ function formatExtraValue(raw: unknown): string {
   try {
     return JSON.stringify(raw);
   } catch {
-    return "n/a";
+    return "不适用";
   }
 }
 
@@ -89,18 +91,9 @@ function renderExtraChannelFields(value: Record<string, unknown>) {
   if (entries.length === 0) {
     return null;
   }
-  return html`
-    <div class="status-list" style="margin-top: 12px;">
-      ${entries.map(
-        ([field, raw]) => html`
-          <div>
-            <span class="label">${field}</span>
-            <span>${formatExtraValue(raw)}</span>
-          </div>
-        `,
-      )}
-    </div>
-  `;
+  return renderChannelStatusList(
+    entries.map(([field, raw]) => ({ label: field, value: formatExtraValue(raw) })),
+  );
 }
 
 export function renderChannelConfigForm(props: ChannelConfigFormProps) {
@@ -108,13 +101,13 @@ export function renderChannelConfigForm(props: ChannelConfigFormProps) {
   const normalized = analysis.schema;
   if (!normalized) {
     return html`
-      <div class="callout danger">Schema unavailable. Use Raw.</div>
+      <div class=${calloutClass("danger")}>配置结构不可用，请切换到原始模式。</div>
     `;
   }
   const node = resolveSchemaNode(normalized, ["channels", props.channelId]);
   if (!node) {
     return html`
-      <div class="callout danger">Channel config schema unavailable.</div>
+      <div class=${calloutClass("danger")}>当前通道配置结构不可用。</div>
     `;
   }
   const configValue = props.configValue ?? {};
@@ -140,11 +133,11 @@ export function renderChannelConfigSection(params: { channelId: string; props: C
   const { channelId, props } = params;
   const disabled = props.configSaving || props.configSchemaLoading;
   return html`
-    <div style="margin-top: 16px;">
+    <div class="mt-4">
       ${
         props.configSchemaLoading
           ? html`
-              <div class="muted">Loading config schema…</div>
+              <div class=${MUTED_TEXT_CLASS}>正在加载配置结构…</div>
             `
           : renderChannelConfigForm({
               channelId,
@@ -155,20 +148,20 @@ export function renderChannelConfigSection(params: { channelId: string; props: C
               onPatch: props.onConfigPatch,
             })
       }
-      <div class="row" style="margin-top: 12px;">
+      <div class="mt-3 flex flex-wrap gap-2">
         <button
-          class="btn primary"
+          class=${buttonClass({ tone: "primary" })}
           ?disabled=${disabled || !props.configFormDirty}
           @click=${() => props.onConfigSave()}
         >
-          ${props.configSaving ? "Saving…" : "Save"}
+          ${props.configSaving ? "保存中…" : "保存"}
         </button>
         <button
-          class="btn"
+          class=${buttonClass()}
           ?disabled=${disabled}
           @click=${() => props.onConfigReload()}
         >
-          Reload
+          重新加载
         </button>
       </div>
     </div>

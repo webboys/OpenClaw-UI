@@ -1,6 +1,7 @@
 import type { GatewayBrowserClient } from "../gateway.ts";
 import type { ConfigSchemaResponse, ConfigSnapshot, ConfigUiHints } from "../types.ts";
 import type { JsonSchema } from "../views/config-form.shared.ts";
+import { localizeUiError, localizeUiText } from "../error-localization.ts";
 import { coerceFormValues } from "./config/form-coerce.ts";
 import {
   cloneConfigObject,
@@ -46,7 +47,7 @@ export async function loadConfig(state: ConfigState) {
     const res = await state.client.request<ConfigSnapshot>("config.get", {});
     applyConfigSnapshot(state, res);
   } catch (err) {
-    state.lastError = String(err);
+    state.lastError = localizeUiError(err);
   } finally {
     state.configLoading = false;
   }
@@ -64,7 +65,7 @@ export async function loadConfigSchema(state: ConfigState) {
     const res = await state.client.request<ConfigSchemaResponse>("config.schema", {});
     applyConfigSchema(state, res);
   } catch (err) {
-    state.lastError = String(err);
+    state.lastError = localizeUiError(err);
   } finally {
     state.configSchemaLoading = false;
   }
@@ -137,14 +138,14 @@ export async function saveConfig(state: ConfigState) {
     const raw = serializeFormForSubmit(state);
     const baseHash = state.configSnapshot?.hash;
     if (!baseHash) {
-      state.lastError = "Config hash missing; reload and retry.";
+      state.lastError = localizeUiText("配置哈希缺失，请刷新后重试。");
       return;
     }
     await state.client.request("config.set", { raw, baseHash });
     state.configFormDirty = false;
     await loadConfig(state);
   } catch (err) {
-    state.lastError = String(err);
+    state.lastError = localizeUiError(err);
   } finally {
     state.configSaving = false;
   }
@@ -160,7 +161,7 @@ export async function applyConfig(state: ConfigState) {
     const raw = serializeFormForSubmit(state);
     const baseHash = state.configSnapshot?.hash;
     if (!baseHash) {
-      state.lastError = "Config hash missing; reload and retry.";
+      state.lastError = localizeUiText("配置哈希缺失，请刷新后重试。");
       return;
     }
     await state.client.request("config.apply", {
@@ -171,7 +172,7 @@ export async function applyConfig(state: ConfigState) {
     state.configFormDirty = false;
     await loadConfig(state);
   } catch (err) {
-    state.lastError = String(err);
+    state.lastError = localizeUiError(err);
   } finally {
     state.configApplying = false;
   }
@@ -188,7 +189,7 @@ export async function runUpdate(state: ConfigState) {
       sessionKey: state.applySessionKey,
     });
   } catch (err) {
-    state.lastError = String(err);
+    state.lastError = localizeUiError(err);
   } finally {
     state.updateRunning = false;
   }

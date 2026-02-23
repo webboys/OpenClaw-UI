@@ -1,5 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -23,6 +24,7 @@ export default defineConfig(() => {
   const base = envBase ? normalizeBase(envBase) : "./";
   return {
     base,
+    plugins: [tailwindcss()],
     publicDir: path.resolve(here, "public"),
     optimizeDeps: {
       include: ["lit/directives/repeat.js"],

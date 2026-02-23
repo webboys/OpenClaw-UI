@@ -578,6 +578,7 @@
 .config-section-card__icon svg {
   width: 100%;
   height: 100%;
+  stroke-width: 1.5;
 }
 
 .config-section-card__titles {

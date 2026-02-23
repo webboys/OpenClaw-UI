@@ -2,7 +2,9 @@ import { html, nothing } from "lit";
 import { formatRelativeTimestamp } from "../format.ts";
 import type { IMessageStatus } from "../types.ts";
 import { renderChannelConfigSection } from "./channels.config.ts";
+import { boolLabel, localizeChannelValue, renderChannelStatusList } from "./channels.shared.ts";
 import type { ChannelsProps } from "./channels.types.ts";
+import { buttonClass, calloutClass, CARD_CLASS, CARD_SUB_CLASS, CARD_TITLE_CLASS } from "./tw.ts";
 
 export function renderIMessageCard(params: {
   props: ChannelsProps;
@@ -12,52 +14,46 @@ export function renderIMessageCard(params: {
   const { props, imessage, accountCountLabel } = params;
 
   return html`
-    <div class="card">
-      <div class="card-title">iMessage</div>
-      <div class="card-sub">macOS bridge status and channel configuration.</div>
+    <div class=${CARD_CLASS}>
+      <div class=${CARD_TITLE_CLASS}>iMessage</div>
+      <div class=${CARD_SUB_CLASS}>macOS 桥接状态与通道配置。</div>
       ${accountCountLabel}
 
-      <div class="status-list" style="margin-top: 16px;">
-        <div>
-          <span class="label">Configured</span>
-          <span>${imessage?.configured ? "Yes" : "No"}</span>
-        </div>
-        <div>
-          <span class="label">Running</span>
-          <span>${imessage?.running ? "Yes" : "No"}</span>
-        </div>
-        <div>
-          <span class="label">Last start</span>
-          <span>${imessage?.lastStartAt ? formatRelativeTimestamp(imessage.lastStartAt) : "n/a"}</span>
-        </div>
-        <div>
-          <span class="label">Last probe</span>
-          <span>${imessage?.lastProbeAt ? formatRelativeTimestamp(imessage.lastProbeAt) : "n/a"}</span>
-        </div>
-      </div>
+      ${renderChannelStatusList([
+        { label: "已配置", value: boolLabel(imessage?.configured) },
+        { label: "运行中", value: boolLabel(imessage?.running) },
+        {
+          label: "最近启动",
+          value: imessage?.lastStartAt ? formatRelativeTimestamp(imessage.lastStartAt) : "暂无",
+        },
+        {
+          label: "最近探测",
+          value: imessage?.lastProbeAt ? formatRelativeTimestamp(imessage.lastProbeAt) : "暂无",
+        },
+      ])}
 
       ${
         imessage?.lastError
-          ? html`<div class="callout danger" style="margin-top: 12px;">
-            ${imessage.lastError}
+          ? html`<div class="${calloutClass("danger")} mt-3">
+            ${localizeChannelValue(imessage.lastError)}
           </div>`
           : nothing
       }
 
       ${
         imessage?.probe
-          ? html`<div class="callout" style="margin-top: 12px;">
-            Probe ${imessage.probe.ok ? "ok" : "failed"} ·
-            ${imessage.probe.error ?? ""}
+          ? html`<div class="${calloutClass("default")} mt-3">
+            探测 ${imessage.probe.ok ? "成功" : "失败"} ·
+            ${localizeChannelValue(imessage.probe.error)}
           </div>`
           : nothing
       }
 
       ${renderChannelConfigSection({ channelId: "imessage", props })}
 
-      <div class="row" style="margin-top: 12px;">
-        <button class="btn" @click=${() => props.onRefresh(true)}>
-          Probe
+      <div class="mt-3">
+        <button class=${buttonClass()} @click=${() => props.onRefresh(true)}>
+          立即探测
         </button>
       </div>
     </div>

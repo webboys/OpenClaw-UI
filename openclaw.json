@@ -1,0 +1,23 @@
+{
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "cliproxyapi": {
+        "baseUrl": "http://38.255.17.9:8317/v1",
+        "apiKey": "xsjgys01",
+        "api": "openai-completions",
+        "models": [
+          { "id": "gpt-5.3-codex", "name": "GPT 5.3 Codex", "contextWindow": 128000 }
+        ]
+      }
+    }
+  },
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "route": "global",
+    "auth": {
+      "mode": "none"
+    }
+  }
+}

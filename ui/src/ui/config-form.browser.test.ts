@@ -62,7 +62,10 @@ describe("config form renderer", () => {
 
     const tokenButton = Array.from(
       container.querySelectorAll<HTMLButtonElement>(".cfg-segmented__btn"),
-    ).find((btn) => btn.textContent?.trim() === "token");
+    ).find((btn) => {
+      const label = btn.textContent?.trim();
+      return label === "token" || label === "令牌";
+    });
     expect(tokenButton).not.toBeUndefined();
     tokenButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(onPatch).toHaveBeenCalledWith(["mode"], "token");
@@ -120,7 +123,10 @@ describe("config form renderer", () => {
 
     const tailnetButton = Array.from(
       container.querySelectorAll<HTMLButtonElement>(".cfg-segmented__btn"),
-    ).find((btn) => btn.textContent?.trim() === "tailnet");
+    ).find((btn) => {
+      const label = btn.textContent?.trim();
+      return label === "tailnet" || label === "Tailnet";
+    });
     expect(tailnetButton).not.toBeUndefined();
     tailnetButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     expect(onPatch).toHaveBeenCalledWith(["bind"], "tailnet");
@@ -194,7 +200,8 @@ describe("config form renderer", () => {
       container,
     );
 
-    expect(container.textContent).toContain("Plugin Enabled");
+    const text = container.textContent ?? "";
+    expect(text.includes("Plugin Enabled") || text.includes("插件启用")).toBe(true);
   });
 
   it("flags unsupported unions", () => {

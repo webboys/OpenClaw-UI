@@ -47,7 +47,7 @@ describe("cron view", () => {
     const container = document.createElement("div");
     render(renderCron(createProps()), container);
 
-    expect(container.textContent).toContain("Select a job to inspect run history.");
+    expect(container.textContent).toContain("请先选择任务，再查看运行历史。");
   });
 
   it("loads run history when clicking a job row", () => {
@@ -90,7 +90,7 @@ describe("cron view", () => {
     expect(selected).not.toBeNull();
 
     const historyButton = Array.from(container.querySelectorAll("button")).find(
-      (btn) => btn.textContent?.trim() === "History",
+      (btn) => btn.textContent?.trim() === "历史",
     );
     expect(historyButton).not.toBeUndefined();
     historyButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -144,11 +144,11 @@ describe("cron view", () => {
       container,
     );
 
-    expect(container.textContent).toContain("Latest runs for Daily ping.");
+    expect(container.textContent).toContain("最近运行：Daily ping");
 
     const cards = Array.from(container.querySelectorAll(".card"));
     const runHistoryCard = cards.find(
-      (card) => card.querySelector(".card-title")?.textContent?.trim() === "Run history",
+      (card) => card.querySelector(".card-title")?.textContent?.trim() === "运行历史",
     );
     expect(runHistoryCard).not.toBeUndefined();
 
@@ -173,7 +173,7 @@ describe("cron view", () => {
     const options = Array.from(container.querySelectorAll("option")).map((opt) =>
       (opt.textContent ?? "").trim(),
     );
-    expect(options).toContain("Webhook POST");
+    expect(options).toContain("回调推送");
   });
 
   it("normalizes stale announce selection in the form when unsupported", () => {
@@ -195,9 +195,9 @@ describe("cron view", () => {
     const options = Array.from(container.querySelectorAll("option")).map((opt) =>
       (opt.textContent ?? "").trim(),
     );
-    expect(options).not.toContain("Announce summary (default)");
-    expect(options).toContain("Webhook POST");
-    expect(options).toContain("None (internal)");
+    expect(options).not.toContain("消息摘要播报（默认）");
+    expect(options).toContain("回调推送");
+    expect(options).toContain("无（仅内部）");
     expect(container.querySelector('input[placeholder="https://example.invalid/cron"]')).toBeNull();
   });
 
@@ -218,8 +218,8 @@ describe("cron view", () => {
       container,
     );
 
-    expect(container.textContent).toContain("Delivery");
-    expect(container.textContent).toContain("webhook");
+    expect(container.textContent).toContain("投递");
+    expect(container.textContent).toContain("回调推送");
     expect(container.textContent).toContain("https://example.invalid/cron");
   });
 });

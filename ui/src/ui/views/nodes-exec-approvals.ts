@@ -5,6 +5,26 @@ import type {
 } from "../controllers/exec-approvals.ts";
 import { clampText, formatRelativeTimestamp } from "../format.ts";
 import type { NodesProps } from "./nodes.ts";
+import {
+  buttonClass,
+  CARD_CLASS,
+  CARD_SUB_CLASS,
+  CARD_TITLE_CLASS,
+  CHECKBOX_CLASS,
+  CHECKBOX_FIELD_CLASS,
+  FIELD_CLASS,
+  FIELD_LABEL_CLASS,
+  INPUT_CLASS,
+  LIST_CLASS,
+  LIST_ITEM_CLASS,
+  LIST_MAIN_CLASS,
+  LIST_META_CLASS,
+  LIST_SUB_CLASS,
+  LIST_TITLE_CLASS,
+  MONO_TEXT_CLASS,
+  MUTED_TEXT_CLASS,
+  SELECT_CLASS,
+} from "./tw.ts";
 
 type ExecSecurity = "deny" | "allowlist" | "full";
 type ExecAsk = "off" | "on-miss" | "always";
@@ -53,16 +73,24 @@ type ExecApprovalsState = {
 const EXEC_APPROVALS_DEFAULT_SCOPE = "__defaults__";
 
 const SECURITY_OPTIONS: Array<{ value: ExecSecurity; label: string }> = [
-  { value: "deny", label: "Deny" },
-  { value: "allowlist", label: "Allowlist" },
-  { value: "full", label: "Full" },
+  { value: "deny", label: "拒绝" },
+  { value: "allowlist", label: "白名单" },
+  { value: "full", label: "完全放行" },
 ];
 
 const ASK_OPTIONS: Array<{ value: ExecAsk; label: string }> = [
-  { value: "off", label: "Off" },
-  { value: "on-miss", label: "On miss" },
-  { value: "always", label: "Always" },
+  { value: "off", label: "关闭" },
+  { value: "on-miss", label: "未命中时询问" },
+  { value: "always", label: "始终询问" },
 ];
+
+function getSecurityLabel(value: string): string {
+  return SECURITY_OPTIONS.find((option) => option.value === value)?.label ?? value;
+}
+
+function getAskLabel(value: string): string {
+  return ASK_OPTIONS.find((option) => option.value === value)?.label ?? value;
+}
 
 function normalizeSecurity(value?: string): ExecSecurity {
   if (value === "allowlist" || value === "full" || value === "deny") {
@@ -203,20 +231,20 @@ export function renderExecApprovals(state: ExecApprovalsState) {
   const ready = state.ready;
   const targetReady = state.target !== "node" || Boolean(state.targetNodeId);
   return html`
-    <section class="card">
-      <div class="row" style="justify-content: space-between; align-items: center;">
+    <section class=${CARD_CLASS}>
+      <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div class="card-title">Exec approvals</div>
-          <div class="card-sub">
-            Allowlist and approval policy for <span class="mono">exec host=gateway/node</span>.
+          <div class=${CARD_TITLE_CLASS}>Exec 审批</div>
+          <div class=${CARD_SUB_CLASS}>
+            管理 <span class="mono">exec host=gateway/node</span> 的白名单与审批策略。
           </div>
         </div>
         <button
-          class="btn"
+          class=${buttonClass({ tone: "primary" })}
           ?disabled=${state.disabled || !state.dirty || !targetReady}
           @click=${state.onSave}
         >
-          ${state.saving ? "Saving…" : "Save"}
+          ${state.saving ? "保存中…" : "保存"}
         </button>
       </div>
 
@@ -224,10 +252,14 @@ export function renderExecApprovals(state: ExecApprovalsState) {
 
       ${
         !ready
-          ? html`<div class="row" style="margin-top: 12px; gap: 12px;">
-            <div class="muted">Load exec approvals to edit allowlists.</div>
-            <button class="btn" ?disabled=${state.loading || !targetReady} @click=${state.onLoad}>
-              ${state.loading ? "Loading…" : "Load approvals"}
+          ? html`<div class="mt-3 flex flex-wrap items-center gap-3">
+            <div class=${MUTED_TEXT_CLASS}>请先加载 Exec 审批配置后再编辑白名单。</div>
+            <button
+              class=${buttonClass()}
+              ?disabled=${state.loading || !targetReady}
+              @click=${state.onLoad}
+            >
+              ${state.loading ? "加载中…" : "加载审批配置"}
             </button>
           </div>`
           : html`
@@ -248,18 +280,19 @@ function renderExecApprovalsTarget(state: ExecApprovalsState) {
   const hasNodes = state.targetNodes.length > 0;
   const nodeValue = state.targetNodeId ?? "";
   return html`
-    <div class="list" style="margin-top: 12px;">
-      <div class="list-item">
-        <div class="list-main">
-          <div class="list-title">Target</div>
-          <div class="list-sub">
-            Gateway edits local approvals; node edits the selected node.
+    <div class="${LIST_CLASS} mt-3">
+      <div class=${LIST_ITEM_CLASS}>
+        <div class=${LIST_MAIN_CLASS}>
+          <div class=${LIST_TITLE_CLASS}>目标</div>
+          <div class=${LIST_SUB_CLASS}>
+            选择在网关本地编辑，或切换到指定节点编辑。
           </div>
         </div>
-        <div class="list-meta">
-          <label class="field">
-            <span>Host</span>
+        <div class="${LIST_META_CLASS} w-full gap-2 lg:w-auto lg:min-w-[220px] lg:items-stretch">
+          <label class=${FIELD_CLASS}>
+            <span class=${FIELD_LABEL_CLASS}>宿主</span>
             <select
+              class=${SELECT_CLASS}
               ?disabled=${state.disabled}
               @change=${(event: Event) => {
                 const target = event.target as HTMLSelectElement;
@@ -272,16 +305,17 @@ function renderExecApprovalsTarget(state: ExecApprovalsState) {
                 }
               }}
             >
-              <option value="gateway" ?selected=${state.target === "gateway"}>Gateway</option>
-              <option value="node" ?selected=${state.target === "node"}>Node</option>
+              <option value="gateway" ?selected=${state.target === "gateway"}>网关</option>
+              <option value="node" ?selected=${state.target === "node"}>节点</option>
             </select>
           </label>
           ${
             state.target === "node"
               ? html`
-                <label class="field">
-                  <span>Node</span>
+                <label class=${FIELD_CLASS}>
+                  <span class=${FIELD_LABEL_CLASS}>节点</span>
                   <select
+                    class=${SELECT_CLASS}
                     ?disabled=${state.disabled || !hasNodes}
                     @change=${(event: Event) => {
                       const target = event.target as HTMLSelectElement;
@@ -289,7 +323,7 @@ function renderExecApprovalsTarget(state: ExecApprovalsState) {
                       state.onSelectTarget("node", value ? value : null);
                     }}
                   >
-                    <option value="" ?selected=${nodeValue === ""}>Select node</option>
+                    <option value="" ?selected=${nodeValue === ""}>选择节点</option>
                     ${state.targetNodes.map(
                       (node) =>
                         html`<option
@@ -309,7 +343,7 @@ function renderExecApprovalsTarget(state: ExecApprovalsState) {
       ${
         state.target === "node" && !hasNodes
           ? html`
-              <div class="muted">No nodes advertise exec approvals yet.</div>
+              <div class="${MUTED_TEXT_CLASS} mt-2">暂无节点声明 Exec 审批能力。</div>
             `
           : nothing
       }
@@ -319,20 +353,23 @@ function renderExecApprovalsTarget(state: ExecApprovalsState) {
 
 function renderExecApprovalsTabs(state: ExecApprovalsState) {
   return html`
-    <div class="row" style="margin-top: 12px; gap: 8px; flex-wrap: wrap;">
-      <span class="label">Scope</span>
-      <div class="row" style="gap: 8px; flex-wrap: wrap;">
+    <div class="mt-3 flex flex-wrap items-center gap-2">
+      <span class=${FIELD_LABEL_CLASS}>范围</span>
+      <div class="flex flex-wrap gap-2">
         <button
-          class="btn btn--sm ${state.selectedScope === EXEC_APPROVALS_DEFAULT_SCOPE ? "active" : ""}"
+          class=${buttonClass({
+            small: true,
+            active: state.selectedScope === EXEC_APPROVALS_DEFAULT_SCOPE,
+          })}
           @click=${() => state.onSelectScope(EXEC_APPROVALS_DEFAULT_SCOPE)}
         >
-          Defaults
+          默认策略
         </button>
         ${state.agents.map((agent) => {
           const label = agent.name?.trim() ? `${agent.name} (${agent.id})` : agent.id;
           return html`
             <button
-              class="btn btn--sm ${state.selectedScope === agent.id ? "active" : ""}"
+              class=${buttonClass({ small: true, active: state.selectedScope === agent.id })}
               @click=${() => state.onSelectScope(agent.id)}
             >
               ${label}
@@ -361,18 +398,19 @@ function renderExecApprovalsPolicy(state: ExecApprovalsState) {
   const autoIsDefault = autoOverride == null;
 
   return html`
-    <div class="list" style="margin-top: 16px;">
-      <div class="list-item">
-        <div class="list-main">
-          <div class="list-title">Security</div>
-          <div class="list-sub">
-            ${isDefaults ? "Default security mode." : `Default: ${defaults.security}.`}
+    <div class="${LIST_CLASS} mt-4">
+      <div class=${LIST_ITEM_CLASS}>
+        <div class=${LIST_MAIN_CLASS}>
+          <div class=${LIST_TITLE_CLASS}>安全策略</div>
+          <div class=${LIST_SUB_CLASS}>
+            ${isDefaults ? "全局默认安全模式。" : `默认值：${getSecurityLabel(defaults.security)}。`}
           </div>
         </div>
-        <div class="list-meta">
-          <label class="field">
-            <span>Mode</span>
+        <div class="${LIST_META_CLASS} w-full gap-2 lg:w-auto lg:min-w-[220px] lg:items-stretch">
+          <label class=${FIELD_CLASS}>
+            <span class=${FIELD_LABEL_CLASS}>模式</span>
             <select
+              class=${SELECT_CLASS}
               ?disabled=${state.disabled}
               @change=${(event: Event) => {
                 const target = event.target as HTMLSelectElement;
@@ -387,7 +425,7 @@ function renderExecApprovalsPolicy(state: ExecApprovalsState) {
               ${
                 !isDefaults
                   ? html`<option value="__default__" ?selected=${securityValue === "__default__"}>
-                    Use default (${defaults.security})
+                    使用默认（${getSecurityLabel(defaults.security)}）
                   </option>`
                   : nothing
               }
@@ -405,17 +443,18 @@ function renderExecApprovalsPolicy(state: ExecApprovalsState) {
         </div>
       </div>
 
-      <div class="list-item">
-        <div class="list-main">
-          <div class="list-title">Ask</div>
-          <div class="list-sub">
-            ${isDefaults ? "Default prompt policy." : `Default: ${defaults.ask}.`}
+      <div class=${LIST_ITEM_CLASS}>
+        <div class=${LIST_MAIN_CLASS}>
+          <div class=${LIST_TITLE_CLASS}>询问策略</div>
+          <div class=${LIST_SUB_CLASS}>
+            ${isDefaults ? "默认提示策略。" : `默认值：${getAskLabel(defaults.ask)}。`}
           </div>
         </div>
-        <div class="list-meta">
-          <label class="field">
-            <span>Mode</span>
+        <div class="${LIST_META_CLASS} w-full gap-2 lg:w-auto lg:min-w-[220px] lg:items-stretch">
+          <label class=${FIELD_CLASS}>
+            <span class=${FIELD_LABEL_CLASS}>模式</span>
             <select
+              class=${SELECT_CLASS}
               ?disabled=${state.disabled}
               @change=${(event: Event) => {
                 const target = event.target as HTMLSelectElement;
@@ -430,7 +469,7 @@ function renderExecApprovalsPolicy(state: ExecApprovalsState) {
               ${
                 !isDefaults
                   ? html`<option value="__default__" ?selected=${askValue === "__default__"}>
-                    Use default (${defaults.ask})
+                    使用默认（${getAskLabel(defaults.ask)}）
                   </option>`
                   : nothing
               }
@@ -448,21 +487,22 @@ function renderExecApprovalsPolicy(state: ExecApprovalsState) {
         </div>
       </div>
 
-      <div class="list-item">
-        <div class="list-main">
-          <div class="list-title">Ask fallback</div>
-          <div class="list-sub">
+      <div class=${LIST_ITEM_CLASS}>
+        <div class=${LIST_MAIN_CLASS}>
+          <div class=${LIST_TITLE_CLASS}>询问回退</div>
+          <div class=${LIST_SUB_CLASS}>
             ${
               isDefaults
-                ? "Applied when the UI prompt is unavailable."
-                : `Default: ${defaults.askFallback}.`
+                ? "当界面提示不可用时采用此策略。"
+                : `默认值：${getSecurityLabel(defaults.askFallback)}。`
             }
           </div>
         </div>
-        <div class="list-meta">
-          <label class="field">
-            <span>Fallback</span>
+        <div class="${LIST_META_CLASS} w-full gap-2 lg:w-auto lg:min-w-[220px] lg:items-stretch">
+          <label class=${FIELD_CLASS}>
+            <span class=${FIELD_LABEL_CLASS}>回退模式</span>
             <select
+              class=${SELECT_CLASS}
               ?disabled=${state.disabled}
               @change=${(event: Event) => {
                 const target = event.target as HTMLSelectElement;
@@ -477,7 +517,7 @@ function renderExecApprovalsPolicy(state: ExecApprovalsState) {
               ${
                 !isDefaults
                   ? html`<option value="__default__" ?selected=${askFallbackValue === "__default__"}>
-                    Use default (${defaults.askFallback})
+                    使用默认（${getSecurityLabel(defaults.askFallback)}）
                   </option>`
                   : nothing
               }
@@ -495,23 +535,24 @@ function renderExecApprovalsPolicy(state: ExecApprovalsState) {
         </div>
       </div>
 
-      <div class="list-item">
-        <div class="list-main">
-          <div class="list-title">Auto-allow skill CLIs</div>
-          <div class="list-sub">
+      <div class=${LIST_ITEM_CLASS}>
+        <div class=${LIST_MAIN_CLASS}>
+          <div class=${LIST_TITLE_CLASS}>自动放行技能 CLI</div>
+          <div class=${LIST_SUB_CLASS}>
             ${
               isDefaults
-                ? "Allow skill executables listed by the Gateway."
+                ? "自动放行网关技能清单中的可执行项。"
                 : autoIsDefault
-                  ? `Using default (${defaults.autoAllowSkills ? "on" : "off"}).`
-                  : `Override (${autoEffective ? "on" : "off"}).`
+                  ? `使用默认 (${defaults.autoAllowSkills ? "开" : "关"})。`
+                  : `覆盖值 (${autoEffective ? "开" : "关"})。`
             }
           </div>
         </div>
-        <div class="list-meta">
-          <label class="field">
-            <span>Enabled</span>
+        <div class="${LIST_META_CLASS} w-full gap-2 lg:w-auto lg:min-w-[220px] lg:items-end">
+          <label class=${CHECKBOX_FIELD_CLASS}>
+            <span>启用</span>
             <input
+              class=${CHECKBOX_CLASS}
               type="checkbox"
               ?disabled=${state.disabled}
               .checked=${autoEffective}
@@ -524,11 +565,11 @@ function renderExecApprovalsPolicy(state: ExecApprovalsState) {
           ${
             !isDefaults && !autoIsDefault
               ? html`<button
-                class="btn btn--sm"
+                class=${buttonClass({ small: true })}
                 ?disabled=${state.disabled}
                 @click=${() => state.onRemove([...basePath, "autoAllowSkills"])}
               >
-                Use default
+                使用默认
               </button>`
               : nothing
           }
@@ -542,27 +583,27 @@ function renderExecApprovalsAllowlist(state: ExecApprovalsState) {
   const allowlistPath = ["agents", state.selectedScope, "allowlist"];
   const entries = state.allowlist;
   return html`
-    <div class="row" style="margin-top: 18px; justify-content: space-between;">
+    <div class="mt-4 flex flex-wrap items-start justify-between gap-3">
       <div>
-        <div class="card-title">Allowlist</div>
-        <div class="card-sub">Case-insensitive glob patterns.</div>
+        <div class=${CARD_TITLE_CLASS}>白名单</div>
+        <div class=${CARD_SUB_CLASS}>大小写不敏感的 glob 模式。</div>
       </div>
       <button
-        class="btn btn--sm"
+        class=${buttonClass({ small: true })}
         ?disabled=${state.disabled}
         @click=${() => {
           const next = [...entries, { pattern: "" }];
           state.onPatch(allowlistPath, next);
         }}
       >
-        Add pattern
+        添加模式
       </button>
     </div>
-    <div class="list" style="margin-top: 12px;">
+    <div class="${LIST_CLASS} mt-3">
       ${
         entries.length === 0
           ? html`
-              <div class="muted">No allowlist entries yet.</div>
+              <div class=${MUTED_TEXT_CLASS}>暂未添加白名单条目。</div>
             `
           : entries.map((entry, index) => renderAllowlistEntry(state, entry, index))
       }
@@ -575,21 +616,22 @@ function renderAllowlistEntry(
   entry: ExecApprovalsAllowlistEntry,
   index: number,
 ) {
-  const lastUsed = entry.lastUsedAt ? formatRelativeTimestamp(entry.lastUsedAt) : "never";
+  const lastUsed = entry.lastUsedAt ? formatRelativeTimestamp(entry.lastUsedAt) : "从未";
   const lastCommand = entry.lastUsedCommand ? clampText(entry.lastUsedCommand, 120) : null;
   const lastPath = entry.lastResolvedPath ? clampText(entry.lastResolvedPath, 120) : null;
   return html`
-    <div class="list-item">
-      <div class="list-main">
-        <div class="list-title">${entry.pattern?.trim() ? entry.pattern : "New pattern"}</div>
-        <div class="list-sub">Last used: ${lastUsed}</div>
-        ${lastCommand ? html`<div class="list-sub mono">${lastCommand}</div>` : nothing}
-        ${lastPath ? html`<div class="list-sub mono">${lastPath}</div>` : nothing}
+    <div class=${LIST_ITEM_CLASS}>
+      <div class=${LIST_MAIN_CLASS}>
+        <div class=${LIST_TITLE_CLASS}>${entry.pattern?.trim() ? entry.pattern : "新模式"}</div>
+        <div class=${LIST_SUB_CLASS}>最近使用：${lastUsed}</div>
+        ${lastCommand ? html`<div class="${LIST_SUB_CLASS} ${MONO_TEXT_CLASS}">${lastCommand}</div>` : nothing}
+        ${lastPath ? html`<div class="${LIST_SUB_CLASS} ${MONO_TEXT_CLASS}">${lastPath}</div>` : nothing}
       </div>
-      <div class="list-meta">
-        <label class="field">
-          <span>Pattern</span>
+      <div class="${LIST_META_CLASS} w-full gap-2 lg:w-auto lg:min-w-[260px] lg:items-stretch">
+        <label class=${FIELD_CLASS}>
+          <span class=${FIELD_LABEL_CLASS}>模式</span>
           <input
+            class=${INPUT_CLASS}
             type="text"
             .value=${entry.pattern ?? ""}
             ?disabled=${state.disabled}
@@ -603,7 +645,7 @@ function renderAllowlistEntry(
           />
         </label>
         <button
-          class="btn btn--sm danger"
+          class=${buttonClass({ small: true, tone: "danger" })}
           ?disabled=${state.disabled}
           @click=${() => {
             if (state.allowlist.length <= 1) {
@@ -613,7 +655,7 @@ function renderAllowlistEntry(
             state.onRemove(["agents", state.selectedScope, "allowlist", index]);
           }}
         >
-          Remove
+          删除
         </button>
       </div>
     </div>

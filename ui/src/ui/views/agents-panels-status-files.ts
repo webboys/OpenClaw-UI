@@ -2,6 +2,18 @@ import { html, nothing } from "lit";
 import { formatRelativeTimestamp } from "../format.ts";
 import type { AgentFileEntry, AgentsFilesListResult } from "../types.ts";
 import { formatBytes } from "./agents-utils.ts";
+import {
+  buttonClass,
+  calloutClass,
+  CARD_CLASS,
+  CARD_SUB_CLASS,
+  CARD_TITLE_CLASS,
+  FIELD_CLASS,
+  FIELD_LABEL_CLASS,
+  MONO_TEXT_CLASS,
+  MUTED_TEXT_CLASS,
+  TEXTAREA_CLASS,
+} from "./tw.ts";
 
 export function renderAgentFiles(params: {
   agentId: string;
@@ -27,44 +39,44 @@ export function renderAgentFiles(params: {
   const isDirty = active ? draft !== baseContent : false;
 
   return html`
-    <section class="card">
-      <div class="row" style="justify-content: space-between;">
+    <section class=${CARD_CLASS}>
+      <div class="flex items-start justify-between gap-3">
         <div>
-          <div class="card-title">Core Files</div>
-          <div class="card-sub">Bootstrap persona, identity, and tool guidance.</div>
+          <div class=${CARD_TITLE_CLASS}>核心文件</div>
+          <div class=${CARD_SUB_CLASS}>管理系统提示、身份配置与工具指导文件。</div>
         </div>
         <button
-          class="btn btn--sm"
+          class=${buttonClass({ small: true })}
           ?disabled=${params.agentFilesLoading}
           @click=${() => params.onLoadFiles(params.agentId)}
         >
-          ${params.agentFilesLoading ? "Loading..." : "Refresh"}
+          ${params.agentFilesLoading ? "加载中…" : "刷新"}
         </button>
       </div>
       ${
         list
-          ? html`<div class="muted mono" style="margin-top: 8px;">Workspace: ${list.workspace}</div>`
+          ? html`<div class="${MUTED_TEXT_CLASS} ${MONO_TEXT_CLASS} mt-2">工作区：${list.workspace}</div>`
           : nothing
       }
       ${
         params.agentFilesError
-          ? html`<div class="callout danger" style="margin-top: 12px;">${params.agentFilesError}</div>`
+          ? html`<div class="${calloutClass("danger")} mt-3">${params.agentFilesError}</div>`
           : nothing
       }
       ${
         !list
           ? html`
-              <div class="callout info" style="margin-top: 12px">
-                Load the agent workspace files to edit core instructions.
+              <div class="${calloutClass("default")} mt-3">
+                请先加载智能体工作区文件，再编辑核心指令。
               </div>
             `
           : html`
-              <div class="agent-files-grid" style="margin-top: 16px;">
+              <div class="agent-files-grid mt-4">
                 <div class="agent-files-list">
                   ${
                     files.length === 0
                       ? html`
-                          <div class="muted">No files found.</div>
+                          <div class=${MUTED_TEXT_CLASS}>没有发现文件。</div>
                         `
                       : files.map((file) =>
                           renderAgentFileRow(file, active, () => params.onSelectFile(file.name)),
@@ -75,7 +87,7 @@ export function renderAgentFiles(params: {
                   ${
                     !activeEntry
                       ? html`
-                          <div class="muted">Select a file to edit.</div>
+                          <div class=${MUTED_TEXT_CLASS}>请选择一个文件开始编辑。</div>
                         `
                       : html`
                           <div class="agent-file-header">
@@ -85,33 +97,34 @@ export function renderAgentFiles(params: {
                             </div>
                             <div class="agent-file-actions">
                               <button
-                                class="btn btn--sm"
+                                class=${buttonClass({ small: true })}
                                 ?disabled=${!isDirty}
                                 @click=${() => params.onFileReset(activeEntry.name)}
                               >
-                                Reset
+                                重置
                               </button>
                               <button
-                                class="btn btn--sm primary"
+                                class=${buttonClass({ small: true, tone: "primary" })}
                                 ?disabled=${params.agentFileSaving || !isDirty}
                                 @click=${() => params.onFileSave(activeEntry.name)}
                               >
-                                ${params.agentFileSaving ? "Saving..." : "Save"}
+                                ${params.agentFileSaving ? "保存中…" : "保存"}
                               </button>
                             </div>
                           </div>
                           ${
                             activeEntry.missing
                               ? html`
-                                  <div class="callout info" style="margin-top: 10px">
-                                    This file is missing. Saving will create it in the agent workspace.
+                                  <div class="${calloutClass("warn")} mt-2.5">
+                                    该文件不存在。点击保存后会在智能体工作区中创建它。
                                   </div>
                                 `
                               : nothing
                           }
-                          <label class="field" style="margin-top: 12px;">
-                            <span>Content</span>
+                          <label class="${FIELD_CLASS} mt-3">
+                            <span class=${FIELD_LABEL_CLASS}>内容</span>
                             <textarea
+                              class=${TEXTAREA_CLASS}
                               .value=${draft}
                               @input=${(e: Event) =>
                                 params.onFileDraftChange(
@@ -132,7 +145,7 @@ export function renderAgentFiles(params: {
 
 function renderAgentFileRow(file: AgentFileEntry, active: string | null, onSelect: () => void) {
   const status = file.missing
-    ? "Missing"
+    ? "缺失"
     : `${formatBytes(file.size)} | ${formatRelativeTimestamp(file.updatedAtMs ?? null)}`;
   return html`
     <button
@@ -147,7 +160,7 @@ function renderAgentFileRow(file: AgentFileEntry, active: string | null, onSelec
       ${
         file.missing
           ? html`
-              <span class="agent-pill warn">missing</span>
+              <span class="agent-pill warn">缺失</span>
             `
           : nothing
       }
