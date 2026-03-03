@@ -70,6 +70,32 @@ openclaw channels status --probe
 openclaw gateway status
 ```
 
+### Reverse proxy nginx
+
+If your QQ callback URL is behind nginx, keep signature verification in OpenClaw by only handling probe methods at the proxy:
+
+```nginx
+location = /qq-official-webhook {
+    if ($request_method = GET) {
+        return 200;
+    }
+    if ($request_method = HEAD) {
+        return 200;
+    }
+    if ($request_method != POST) {
+        return 405;
+    }
+
+    proxy_pass http://127.0.0.1:18789;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+This allows platform endpoint checks (`GET` or `HEAD`) to pass while real callback events (`POST`) still go through OpenClaw verification.
+
 ### Faster first deploy (recommended)
 
 If you run OpenClaw from a git checkout, use the helper script to reduce manual steps.
@@ -181,6 +207,7 @@ openclaw logs --follow
 Common failures:
 
 - Webhook receives no events: check QQ callback URL and webhook path.
+- Callback check shows 405 in QQ platform: if nginx is in front, return `200` for `GET` and `HEAD` on `/qq-official-webhook`, and proxy only `POST`.
 - Probe fails with auth error: verify `channels.qq.appId` and `channels.qq.appSecret`.
 - DMs ignored: sender is pending approval under pairing mode.
 
